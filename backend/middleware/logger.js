@@ -1,0 +1,21 @@
+exports.requestLogger = (req, res, next) => {
+    const start = Date.now();
+
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const log = {
+            method: req.method,
+            url: req.originalUrl,
+            status: res.statusCode,
+            duration: `${duration}ms`,
+            user: req.user?.username || 'anonymous',
+            ip: req.ip,
+            userAgent: req.get('user-agent'),
+            timestamp: new Date().toISOString()
+        };
+
+        console.log(JSON.stringify(log));
+    });
+
+    next();
+};
