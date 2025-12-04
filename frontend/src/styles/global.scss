@@ -1,0 +1,71 @@
+:root {
+  --primary-color: #5b8def;
+  --success-color: #49cc90;
+  --warning-color: #f7b84b;
+  --danger-color: #f1556c;
+  --text-primary: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --border-color: #e0e6ed;
+  --bg-color: #f5f7fa;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-color);
+}
+
+/* Element Plus 主题定制 */
+.el-button--primary {
+  --el-button-bg-color: var(--primary-color);
+  --el-button-border-color: var(--primary-color);
+}
+
+.el-menu-item.is-active {
+  color: var(--primary-color) !important;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+
+  &:hover {
+    background: #a8a8a8;
+  }
+}
+
+/* 动画类 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 15px;
+  }
+
+  .filter-card .el-form {
+    .el-form-item {
+      width: 100%;
+    }
+  }
+}
