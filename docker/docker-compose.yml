@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # MongoDB 数据库
+  mongodb:
+    image: mongo:6.0
+    container_name: admin-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    networks:
+      - admin-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: admin-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - admin-network
+
+  # 后端服务
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/Dockerfile
+    container_name: admin-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/admin_system?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-production-secret-key-change-this
+      - FRONTEND_URL=http://localhost
+    networks:
+      - admin-network
+    volumes:
+      - backend_logs:/app/logs
+
+  # 前端服务
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/Dockerfile
+    container_name: admin-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - admin-network
+
+networks:
+  admin-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
+  backend_logs:
