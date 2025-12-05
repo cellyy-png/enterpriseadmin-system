@@ -1,0 +1,48 @@
+// 断点变量
+$breakpoint-xs: 480px;
+$breakpoint-sm: 768px;
+$breakpoint-md: 992px;
+$breakpoint-lg: 1200px;
+$breakpoint-xl: 1920px;
+
+// 响应式工具类
+@media (max-width: $breakpoint-sm) {
+  .hidden-xs {
+    display: none !important;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 15px;
+
+    h1 {
+      font-size: 20px !important;
+    }
+  }
+
+  .filter-card {
+    .el-form {
+      .el-form-item {
+        width: 100%;
+        margin-right: 0 !important;
+      }
+    }
+  }
+
+  .el-table {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .hidden-sm {
+    display: none !important;
+  }
+}
+
+@media (max-width: $breakpoint-lg) {
+  .hidden-md {
+    display: none !important;
+  }
+}
