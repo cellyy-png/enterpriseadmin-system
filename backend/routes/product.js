@@ -32,9 +32,9 @@ router.delete('/:id',
     productController.deleteProduct
 );
 
-router.post('/:id/upload-images',
-    checkPermission('product', 'update'),
-    productController.uploadImages
-);
+// router.post('/:id/upload-images',
+//     checkPermission('product', 'update'),
+//     productController.uploadImages
+// ); // uploadImages 方法未定义
 
 module.exports = router;

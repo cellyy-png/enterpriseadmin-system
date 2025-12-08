@@ -1,6 +1,13 @@
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Role = require('../models/Role');
-const { generateToken } = require('../middleware/auth');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
+
+// 生成 JWT Token
+const generateToken = (userId) => {
+    return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
+};
 
 exports.register = async (req, res) => {
     try {
@@ -101,6 +108,30 @@ exports.login = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
     res.json({ user: req.user });
+};
+
+exports.refreshToken = async (req, res) => {
+    try {
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        
+        if (!token) {
+            return res.status(401).json({ error: '未提供认证令牌' });
+        }
+        
+        // 验证旧 token
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        // 生成新 token
+        const newToken = generateToken(decoded.id);
+        
+        res.json({
+            message: 'Token 刷新成功',
+            token: newToken
+        });
+    } catch (error) {
+        console.error('刷新 Token 错误:', error);
+        res.status(500).json({ error: 'Token 刷新失败' });
+    }
 };
 
 exports.logout = async (req, res) => {

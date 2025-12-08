@@ -49,3 +49,29 @@ exports.authenticate = async (req, res, next) => {
         return res.status(401).json({ error: '认证失败' });
     }
 };
+
+// 权限检查中间件
+exports.checkPermission = (resource, action) => {
+    return async (req, res, next) => {
+        try {
+            const user = req.user;
+            
+            // 获取用户角色的权限
+            const permissions = user.role.permissions;
+            
+            // 检查是否有对应资源和操作的权限
+            const hasPermission = permissions.some(permission => 
+                permission.resource === resource && 
+                (permission.actions === '*' || permission.actions.includes(action))
+            );
+            
+            if (!hasPermission) {
+                return res.status(403).json({ error: '权限不足' });
+            }
+            
+            next();
+        } catch (error) {
+            return res.status(500).json({ error: '权限检查失败' });
+        }
+    };
+};

@@ -1,9 +1,11 @@
+const express = require('express');
 const categoryRouter = express.Router();
 const categoryController = require('../controllers/categoryController');
+const { authenticate, checkPermission } = require('../middleware/auth');
 
 categoryRouter.get('/', categoryController.getAllCategories);
 categoryRouter.get('/tree', categoryController.getCategoryTree);
-categoryRouter.get('/:id', categoryController.getCategoryById);
+// categoryRouter.get('/:id', categoryController.getCategoryById); // getCategoryById 方法未定义
 
 categoryRouter.use(authenticate);
 

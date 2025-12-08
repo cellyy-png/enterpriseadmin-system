@@ -3,6 +3,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { validate, userValidation } = require('../middleware/validation');
 const { authLimiter } = require('../middleware/rateLimiter');
+const { authenticate } = require('../middleware/auth');
 
 router.post('/register',
     authLimiter,

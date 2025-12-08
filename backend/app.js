@@ -16,12 +16,12 @@ const redis = require('redis');
 // 路由导入
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
-const roleRoutes = require('./routes/role');
+// const roleRoutes = require('./routes/role'); // 暂时注释，因为缺少文件
 const orderRoutes = require('./routes/order');
 const productRoutes = require('./routes/product');
 const categoryRoutes = require('./routes/category');
 const dashboardRoutes = require('./routes/dashboard');
-const aiRoutes = require('./routes/ai');
+// const aiRoutes = require('./routes/ai'); // 暂时禁用AI路由，避免TensorFlow依赖问题
 
 const app = express();
 
@@ -91,12 +91,12 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/admin_sys
 // ============================================
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/roles', roleRoutes);
+// app.use('/api/roles', roleRoutes); // 暂时注释，因为缺少文件
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/ai', aiRoutes);
+// app.use('/api/ai', aiRoutes); // 暂时禁用AI路由，避免TensorFlow依赖问题
 
 // 健康检查
 app.get('/health', (req, res) => {

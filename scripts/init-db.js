@@ -1,15 +1,16 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 const Role = require('../backend/models/Role');
 const User = require('../backend/models/User');
 const Category = require('../backend/models/Category');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/admin_system';
-
 async function initDatabase() {
   try {
     // 连接数据库
-    await mongoose.connect(MONGODB_URI);
+    const mongod = await MongoMemoryServer.create();
+    const uri = mongod.getUri();
+    await mongoose.connect(uri);
     console.log('✓ 数据库连接成功');
 
     // 清空现有数据
@@ -112,6 +113,8 @@ async function initDatabase() {
     console.log('✓ 创建默认分类成功');
 
     console.log('\n✅ 数据库初始化完成！');
+    // 关闭内存数据库
+    await mongod.stop();
     process.exit(0);
   } catch (error) {
     console.error('❌ 数据库初始化失败:', error);
