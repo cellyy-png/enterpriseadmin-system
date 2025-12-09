@@ -12,6 +12,7 @@ const mongoSanitize = require('express-mongo-sanitize');
 const compression = require('compression');
 const morgan = require('morgan');
 const redis = require('redis');
+const connectDB = require('./config/database');
 
 // 路由导入
 const authRoutes = require('./routes/auth');
@@ -75,16 +76,7 @@ app.set('redisClient', redisClient);
 // ============================================
 // MongoDB 连接
 // ============================================
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/admin_system', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    autoIndex: true
-})
-    .then(() => console.log('✓ MongoDB 连接成功'))
-    .catch(err => {
-        console.error('✗ MongoDB 连接失败:', err);
-        process.exit(1);
-    });
+connectDB();
 
 // ============================================
 // API 路由

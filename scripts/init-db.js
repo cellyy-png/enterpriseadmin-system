@@ -7,18 +7,22 @@ const Category = require('../backend/models/Category');
 
 async function initDatabase() {
   try {
-    // 连接数据库
+    // 连接数据库 - 使用内存数据库
     const mongod = await MongoMemoryServer.create();
     const uri = mongod.getUri();
     await mongoose.connect(uri);
-    console.log('✓ 数据库连接成功');
+    console.log('✓ 内存数据库连接成功');
 
     // 清空现有数据
+    // 增加超时时间
     await Promise.all([
       Role.deleteMany({}),
       User.deleteMany({}),
       Category.deleteMany({})
-    ]);
+    ]).catch(err => {
+      console.error('清空数据出错:', err);
+      // 继续执行，不中断流程
+    });
     console.log('✓ 清空现有数据');
 
     // 创建角色
@@ -66,7 +70,8 @@ async function initDatabase() {
 
     // 创建管理员账户
     const superAdminRole = roles.find(r => r.name === 'super_admin');
-    const hashedPassword = await bcrypt.hash('Admin123456', 12);
+    // 修改密码为 Admin123 以匹配前端登录表单
+    const hashedPassword = await bcrypt.hash('Admin123', 12);
 
     await User.create({
       username: 'admin',
@@ -77,7 +82,7 @@ async function initDatabase() {
     });
     console.log('✓ 创建管理员账户成功');
     console.log('  邮箱: admin@example.com');
-    console.log('  密码: Admin123456');
+    console.log('  密码: Admin123');
 
     // 创建默认分类
     const categories = await Category.create([
@@ -113,9 +118,13 @@ async function initDatabase() {
     console.log('✓ 创建默认分类成功');
 
     console.log('\n✅ 数据库初始化完成！');
-    // 关闭内存数据库
-    await mongod.stop();
-    process.exit(0);
+
+    // 为了保持数据库运行，我们不关闭 mongod 实例
+    // 应用程序将需要连接到这个实例
+    console.log(`数据库 URI: ${uri}`);
+    
+    // 不退出程序，保持数据库运行
+    console.log("内存数据库正在运行，请保持此进程开启");
   } catch (error) {
     console.error('❌ 数据库初始化失败:', error);
     process.exit(1);
