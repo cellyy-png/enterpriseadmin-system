@@ -1,5 +1,5 @@
 const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
+// const RedisStore = require('rate-limit-redis'); // [已移除] 移除 Redis 依赖
 
 exports.createRateLimiter = (options = {}) => {
     const {

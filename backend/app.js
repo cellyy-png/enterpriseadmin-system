@@ -1,6 +1,6 @@
 // ============================================
 // 企业级后台管理系统 - 后端主服务
-// 技术栈: Express + MongoDB + JWT + Redis
+// 修改版: 移除 Redis/AI 依赖，使用本地文件数据库
 // ============================================
 
 const express = require('express');
@@ -11,18 +11,18 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const compression = require('compression');
 const morgan = require('morgan');
-const redis = require('redis');
+// const redis = require('redis'); // [已移除] 移除 Redis 依赖
 const connectDB = require('./config/database');
 
 // 路由导入
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
-// const roleRoutes = require('./routes/role'); // 暂时注释，因为缺少文件
+// const roleRoutes = require('./routes/role');
 const orderRoutes = require('./routes/order');
 const productRoutes = require('./routes/product');
 const categoryRoutes = require('./routes/category');
 const dashboardRoutes = require('./routes/dashboard');
-// const aiRoutes = require('./routes/ai'); // 暂时禁用AI路由，避免TensorFlow依赖问题
+// const aiRoutes = require('./routes/ai'); // [已移除] 移除 AI 路由
 
 const app = express();
 
@@ -33,8 +33,8 @@ const app = express();
 // 安全相关
 app.use(helmet());
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true
+  origin: true, // 允许所有来源，方便开发调试
+  credentials: true
 }));
 
 // 请求体解析
@@ -48,30 +48,32 @@ app.use(mongoSanitize());
 app.use(compression());
 
 // 日志
-app.use(morgan('combined'));
+app.use(morgan('dev')); // 使用 dev 模式日志更清晰
 
-// 速率限制
+// 速率限制 (内存模式，不使用 Redis)
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15分钟
-    max: 100, // 限制100个请求
-    message: '请求过于频繁，请稍后再试'
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 1000, // 开发模式放宽限制
+  message: '请求过于频繁，请稍后再试'
 });
 app.use('/api/', limiter);
 
 // ============================================
-// Redis 连接 (缓存 & Session)
+// Mock Redis (模拟 Redis 客户端)
+// 目的：防止 routes/middleware 中调用 req.app.get('redisClient') 时报错
 // ============================================
-const redisClient = redis.createClient({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD
-});
-
-redisClient.on('error', (err) => console.error('Redis错误:', err));
-redisClient.on('connect', () => console.log('✓ Redis 连接成功'));
-
-// 将 Redis 客户端挂载到 app
-app.set('redisClient', redisClient);
+const mockRedis = {
+  get: async () => null,      // 永远返回空，表示没有缓存
+  set: async () => {},        // 不做任何事
+  setex: async () => {},      // 不做任何事
+  del: async () => {},        // 不做任何事
+  keys: async () => [],       // 返回空数组
+  on: () => {},               // 忽略事件监听
+  quit: () => {}              // 忽略退出
+};
+// 挂载假的 Redis 客户端
+app.set('redisClient', mockRedis);
+console.log('⚠️  Redis 已禁用，系统将以无缓存模式运行');
 
 // ============================================
 // MongoDB 连接
@@ -83,59 +85,58 @@ connectDB();
 // ============================================
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-// app.use('/api/roles', roleRoutes); // 暂时注释，因为缺少文件
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-// app.use('/api/ai', aiRoutes); // 暂时禁用AI路由，避免TensorFlow依赖问题
+// app.use('/api/ai', aiRoutes); // [已禁用]
 
 // 健康检查
 app.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date(),
-        uptime: process.uptime()
-    });
+  res.json({
+    status: 'ok',
+    timestamp: new Date(),
+    uptime: process.uptime(),
+    mode: 'local-standalone'
+  });
 });
 
 // ============================================
 // 全局错误处理
 // ============================================
 app.use((err, req, res, next) => {
-    console.error('全局错误:', err);
+  console.error('全局错误:', err);
 
-    // MongoDB 错误
-    if (err.name === 'ValidationError') {
-        return res.status(400).json({
-            error: '数据验证失败',
-            details: Object.values(err.errors).map(e => e.message)
-        });
-    }
-
-    if (err.name === 'CastError') {
-        return res.status(400).json({ error: '无效的ID格式' });
-    }
-
-    // JWT 错误
-    if (err.name === 'JsonWebTokenError') {
-        return res.status(401).json({ error: '无效的token' });
-    }
-
-    if (err.name === 'TokenExpiredError') {
-        return res.status(401).json({ error: 'Token已过期' });
-    }
-
-    // 默认错误
-    res.status(err.status || 500).json({
-        error: err.message || '服务器内部错误',
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  // MongoDB 错误
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: '数据验证失败',
+      details: Object.values(err.errors).map(e => e.message)
     });
+  }
+
+  if (err.name === 'CastError') {
+    return res.status(400).json({ error: '无效的ID格式' });
+  }
+
+  // JWT 错误
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({ error: '无效的token' });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({ error: 'Token已过期' });
+  }
+
+  // 默认错误
+  res.status(err.status || 500).json({
+    error: err.message || '服务器内部错误'
+  });
 });
 
 // 404 处理
 app.use((req, res) => {
-    res.status(404).json({ error: '请求的资源不存在' });
+  res.status(404).json({ error: '请求的资源不存在' });
 });
 
 // ============================================
@@ -143,22 +144,19 @@ app.use((req, res) => {
 // ============================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`
+  console.log(`
 ╔═══════════════════════════════════════╗
-║   🚀 服务器启动成功                    ║
-║   📡 端口: ${PORT}                     ║
-║   🌍 环境: ${process.env.NODE_ENV || 'development'}        ║
-║   📅 时间: ${new Date().toLocaleString('zh-CN')}   ║
+║     服务器启动成功                       ║
+║     端口: ${PORT}                      ║
+║     数据库: 本地文件存储 (No Service)     ║
 ╚═══════════════════════════════════════╝
   `);
 });
 
 // 优雅关闭
 process.on('SIGTERM', () => {
-    console.log('收到 SIGTERM 信号，正在优雅关闭...');
-    mongoose.connection.close();
-    redisClient.quit();
-    process.exit(0);
+  mongoose.connection.close();
+  process.exit(0);
 });
 
 module.exports = app;
