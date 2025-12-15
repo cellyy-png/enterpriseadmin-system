@@ -5,6 +5,16 @@ const { authenticate, requireRole, checkPermission } = require('../middleware/au
 
 userRouter.use(authenticate); // 所有用户路由都需要认证
 
+userRouter.get('/roles', 
+    checkPermission('user', 'read'), 
+    userController.getAllRoles
+);
+
+userRouter.post('/',
+    checkPermission('user', 'create'),
+    userController.createUser
+);
+
 userRouter.get('/',
     checkPermission('user', 'read'),
     userController.getAllUsers

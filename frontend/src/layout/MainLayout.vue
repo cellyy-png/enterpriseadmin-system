@@ -49,9 +49,7 @@
         </el-breadcrumb>
 
         <div class="top-bar-actions">
-          <el-badge :value="3" class="notification-badge">
-            <el-button :icon="Bell" circle />
-          </el-badge>
+          <el-button :icon="Bell" circle />
           <el-dropdown>
             <el-avatar :src="userStore.user?.avatar" />
             <template #dropdown>
@@ -206,10 +204,6 @@ const handleLogout = () => {
     display: flex;
     align-items: center;
     gap: 20px;
-
-    .notification-badge {
-      cursor: pointer;
-    }
   }
 }
 

@@ -1,7 +1,7 @@
 <template>
   <div class="data-screen">
     <div class="screen-header">
-      <h1 class="screen-title">🎯 企业数据运营中心</h1>
+      <h1 class="screen-title">企业数据运营中心</h1>
       <div class="screen-time">{{ currentTime }}</div>
     </div>
 
@@ -9,7 +9,7 @@
     <el-row :gutter="20" class="kpi-row">
       <el-col :xs="24" :sm="12" :lg="6">
         <div class="kpi-card" style="border-color: #f7b84b">
-          <div class="kpi-icon" style="background: #f7b84b">💰</div>
+          <div class="kpi-icon" style="background: #f7b84b"></div>
           <div class="kpi-content">
             <p class="kpi-title">今日销售额</p>
             <h2 class="kpi-value">¥{{ formatNumber(overview.totalRevenue) }}</h2>
@@ -19,7 +19,7 @@
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
         <div class="kpi-card" style="border-color: #49cc90">
-          <div class="kpi-icon" style="background: #49cc90">📦</div>
+          <div class="kpi-icon" style="background: #49cc90"></div>
           <div class="kpi-content">
             <p class="kpi-title">今日订单</p>
             <h2 class="kpi-value">{{ overview.todayOrders || 0 }}</h2>
@@ -29,7 +29,7 @@
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
         <div class="kpi-card" style="border-color: #5b8def">
-          <div class="kpi-icon" style="background: #5b8def">👥</div>
+          <div class="kpi-icon" style="background: #5b8def"></div>
           <div class="kpi-content">
             <p class="kpi-title">活跃用户</p>
             <h2 class="kpi-value">{{ overview.totalUsers || 0 }}</h2>
@@ -39,7 +39,7 @@
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
         <div class="kpi-card" style="border-color: #f1556c">
-          <div class="kpi-icon" style="background: #f1556c">🛍️</div>
+          <div class="kpi-icon" style="background: #f1556c"></div>
           <div class="kpi-content">
             <p class="kpi-title">商品总数</p>
             <h2 class="kpi-value">{{ overview.totalProducts || 0 }}</h2>
@@ -54,7 +54,7 @@
       <el-col :xs="24" :lg="16">
         <div class="chart-container large">
           <div class="chart-header">
-            <h3>📈 销售趋势分析</h3>
+            <h3>销售趋势分析</h3>
             <span class="chart-subtitle">近30天数据</span>
           </div>
           <v-chart :option="salesTrendOption" style="height: 350px" />
@@ -64,7 +64,7 @@
       <el-col :xs="24" :lg="8">
         <div class="chart-container">
           <div class="chart-header">
-            <h3>🎯 分类销售占比</h3>
+            <h3>分类销售占比</h3>
           </div>
           <v-chart :option="categoryOption" style="height: 350px" />
         </div>
@@ -76,7 +76,7 @@
       <el-col :xs="24" :md="12" :lg="8">
         <div class="chart-container">
           <div class="chart-header">
-            <h3>🔥 热销商品TOP5</h3>
+            <h3>热销商品TOP5</h3>
           </div>
           <v-chart :option="topProductsOption" style="height: 300px" />
         </div>
@@ -85,7 +85,7 @@
       <el-col :xs="24" :md="12" :lg="8">
         <div class="chart-container">
           <div class="chart-header">
-            <h3>📊 用户增长趋势</h3>
+            <h3>用户增长趋势</h3>
           </div>
           <v-chart :option="userGrowthOption" style="height: 300px" />
         </div>
@@ -94,7 +94,7 @@
       <el-col :xs="24" :md="12" :lg="8">
         <div class="chart-container">
           <div class="chart-header">
-            <h3>⚡ 实时数据流</h3>
+            <h3>实时数据流</h3>
           </div>
           <div class="realtime-stats">
             <div class="stat-row">
@@ -143,6 +143,7 @@ const realtimeData = ref({
 })
 
 let timer = null
+let dataTimer = null
 
 onMounted(() => {
   loadAllData()
@@ -151,12 +152,12 @@ onMounted(() => {
     updateRealtimeData()
   }, 1000)
 
-  const dataTimer = setInterval(loadAllData, 30000)
-  onUnmounted(() => clearInterval(dataTimer))
+  dataTimer = setInterval(loadAllData, 30000)
 })
 
 onUnmounted(() => {
   if (timer) clearInterval(timer)
+  if (dataTimer) clearInterval(dataTimer)
 })
 
 const loadAllData = async () => {
@@ -418,4 +419,4 @@ const userGrowthOption = computed(() => ({
     }
   }
 }
-
+</style>

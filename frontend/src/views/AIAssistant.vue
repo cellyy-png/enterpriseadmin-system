@@ -3,7 +3,7 @@
     <el-card class="ai-card" shadow="always">
       <template #header>
         <div class="ai-header">
-          <h1>🤖 AI 智能助手</h1>
+          <h1>AI 智能助手</h1>
           <el-segmented v-model="activeTab" :options="tabOptions" />
         </div>
       </template>
@@ -17,7 +17,7 @@
               :class="['message', msg.type]"
           >
             <div class="message-avatar">
-              {{ msg.type === 'user' ? '👤' : '🤖' }}
+              {{ msg.type === 'user' ? 'U' : 'AI' }}
             </div>
             <div class="message-content">
               <div class="message-text">{{ msg.content }}</div>
@@ -28,7 +28,7 @@
           </div>
 
           <div v-if="loading" class="message assistant">
-            <div class="message-avatar">🤖</div>
+            <div class="message-avatar">AI</div>
             <div class="message-content">
               <div class="typing-indicator">
                 <span></span>
@@ -104,8 +104,8 @@ import { aiAPI } from '@/utils/request'
 
 const activeTab = ref('chat')
 const tabOptions = [
-  { label: '💬 对话', value: 'chat' },
-  { label: '🛠️ 工具', value: 'tools' }
+  { label: '对话', value: 'chat' },
+  { label: '工具', value: 'tools' }
 ]
 
 const messages = ref([
@@ -121,46 +121,46 @@ const loading = ref(false)
 const messagesRef = ref(null)
 
 const quickActions = [
-  { key: 'analyze', label: '📊 数据分析' },
-  { key: 'report', label: '📝 生成报告' },
-  { key: 'predict', label: '🔮 销量预测' },
-  { key: 'recommend', label: '💡 商品推荐' }
+  { key: 'analyze', label: '数据分析' },
+  { key: 'report', label: '生成报告' },
+  { key: 'predict', label: '销量预测' },
+  { key: 'recommend', label: '商品推荐' }
 ]
 
 const aiTools = [
   {
     key: 'analyze',
-    icon: '📊',
+    icon: '',
     title: '智能数据分析',
     description: '自动分析销售、用户、商品等数据，生成可视化报告'
   },
   {
     key: 'report',
-    icon: '📝',
+    icon: '',
     title: '自动报告生成',
     description: '一键生成日报、周报、月报等运营报告'
   },
   {
     key: 'predict',
-    icon: '🔮',
+    icon: '',
     title: '销量预测',
     description: '基于历史数据预测商品未来销量趋势'
   },
   {
     key: 'recommend',
-    icon: '💡',
+    icon: '',
     title: '商品推荐',
     description: '基于用户行为推荐相关商品'
   },
   {
     key: 'image',
-    icon: '🔍',
+    icon: '',
     title: '图像识别',
     description: '识别商品图片并自动分类标注'
   },
   {
     key: 'insight',
-    icon: '📈',
+    icon: '',
     title: '趋势洞察',
     description: '发现数据中的隐藏趋势和商机'
   }

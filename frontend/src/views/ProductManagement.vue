@@ -54,7 +54,7 @@
         <el-table-column label="图片" width="80">
           <template #default="{ row }">
             <el-image
-                :src="row.images?.[0] || 'https://via.placeholder.com/50'"
+                :src="row.images?.[0] || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCAzMGMxMC0xMCAzMC0xMCA0MCAwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iOCIgZmlsbD0ibm9uZSIvPjwvc3ZnPg=='"
                 fit="cover"
                 style="width: 50px; height: 50px; border-radius: 8px"
             />
@@ -206,11 +206,25 @@
           />
         </el-form-item>
 
-        <el-form-item label="图片URL">
-          <el-input
-              v-model="formData.images"
-              placeholder="https://example.com/image.jpg"
-          />
+        <el-form-item label="商品图片">
+          <el-upload
+              v-if="!formData.imagePreview"
+              class="avatar-uploader"
+              action="/api/products/upload-image"
+              :show-file-list="false"
+              :on-success="handleImageSuccess"
+              :on-error="handleImageError"
+              :before-upload="beforeImageUpload"
+              :headers="uploadHeaders"
+              name="image"
+          >
+            <el-button type="primary" :icon="Upload">上传图片</el-button>
+            <div class="el-upload__tip">jpg/png/gif 文件，大小不超过 5MB</div>
+          </el-upload>
+          <div v-else class="image-preview">
+            <img :src="formData.imagePreview || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCAzMGMxMC0xMCAzMC0xMCA0MCAwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iOCIgZmlsbD0ibm9uZSIvPjwvc3ZnPg=='" class="preview-image" />
+            <el-button type="danger" @click="removeImage">删除图片</el-button>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -223,7 +237,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Plus, Search, Refresh } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Upload } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productAPI, categoryAPI } from '@/utils/request'
 
@@ -253,8 +267,13 @@ const formData = reactive({
   category: '',
   status: 'active',
   tags: '',
-  images: ''
+  images: '',
+  imagePreview: ''
 })
+
+const uploadHeaders = {
+  Authorization: `Bearer ${localStorage.getItem('token')}`
+}
 
 const formRules = {
   name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
@@ -286,6 +305,7 @@ const loadCategories = async () => {
     categories.value = data.categories
   } catch (error) {
     console.error('加载分类失败:', error)
+    ElMessage.error('加载分类失败')
   }
 }
 
@@ -301,8 +321,11 @@ const handleAdd = () => {
     category: '',
     status: 'active',
     tags: '',
-    images: ''
+    images: '',
+    imagePreview: ''
   })
+  // 更新上传头部信息
+  uploadHeaders.Authorization = `Bearer ${localStorage.getItem('token')}`
   dialogVisible.value = true
 }
 
@@ -311,8 +334,11 @@ const handleEdit = (row) => {
     ...row,
     category: row.category?._id,
     tags: row.tags?.join(', ') || '',
-    images: row.images?.[0] || ''
+    images: row.images?.[0] || '',
+    imagePreview: row.images?.[0] ? 'http://localhost:5000' + row.images?.[0] : ''
   })
+  // 更新上传头部信息
+  uploadHeaders.Authorization = `Bearer ${localStorage.getItem('token')}`
   dialogVisible.value = true
 }
 
@@ -325,7 +351,7 @@ const handleDelete = (row) => {
       ElMessage.success('删除成功')
       loadProducts()
     } catch (error) {
-      ElMessage.error('删除失败')
+      ElMessage.error('删除失败: ' + (error.response?.data?.error || '未知错误'))
     }
   })
 }
@@ -334,10 +360,19 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (!valid) return
 
+    // 创建提交数据对象
     const submitData = {
       ...formData,
       tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
       images: formData.images ? [formData.images] : []
+    }
+    
+    // 删除预览字段
+    delete submitData.imagePreview
+    
+    // 删除空的 _id 字段
+    if (!submitData._id) {
+      delete submitData._id;
     }
 
     try {
@@ -351,7 +386,8 @@ const handleSubmit = async () => {
       dialogVisible.value = false
       loadProducts()
     } catch (error) {
-      ElMessage.error('操作失败')
+      console.error('操作失败:', error)
+      ElMessage.error('操作失败: ' + (error.response?.data?.error || error.message || '未知错误'))
     }
   })
 }
@@ -370,6 +406,36 @@ const getStatusLabel = (status) => {
   const map = { active: '上架', inactive: '下架', out_of_stock: '缺货' }
   return map[status] || status
 }
+
+const handleImageSuccess = (response) => {
+  formData.images = response.url;
+  formData.imagePreview = 'http://localhost:5000' + response.url;
+  ElMessage.success('图片上传成功');
+};
+
+const handleImageError = (error) => {
+  console.error('图片上传失败:', error);
+  ElMessage.error('图片上传失败: ' + (error.response?.data?.error || error.message || '未知错误'));
+};
+
+const beforeImageUpload = (file) => {
+  const isImage = file.type.startsWith('image/');
+  const isLt5M = file.size / 1024 / 1024 < 5;
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件!');
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!');
+  }
+  return isImage && isLt5M;
+};
+
+const removeImage = () => {
+  formData.images = '';
+  formData.imagePreview = '';
+};
+
 </script>
 
 <style lang="scss" scoped>
@@ -408,6 +474,24 @@ const getStatusLabel = (status) => {
   .el-pagination {
     margin-top: 20px;
     justify-content: flex-end;
+  }
+
+  .avatar-uploader {
+    display: block;
+  }
+
+  .image-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .preview-image {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 6px;
+    border: 1px solid #dcdfe6;
   }
 }
 </style>

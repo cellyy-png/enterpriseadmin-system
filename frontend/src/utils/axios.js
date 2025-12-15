@@ -26,11 +26,20 @@ instance.interceptors.response.use(
     response => response,
     error => {
         if (error.response) {
+            // 特殊处理登录接口的错误
+            const isLoginRequest = error.config.url.endsWith('/auth/login');
+            
             switch (error.response.status) {
                 case 401:
-                    ElMessage.error('登录已过期，请重新登录')
-                    localStorage.removeItem('token')
-                    router.push('/login')
+                    // 如果是登录请求返回401，则显示具体的错误信息而不是"登录已过期"
+                    if (isLoginRequest) {
+                        const errorMessage = error.response.data?.error || '邮箱或密码错误';
+                        ElMessage.error(errorMessage);
+                    } else {
+                        ElMessage.error('登录已过期，请重新登录');
+                        localStorage.removeItem('token');
+                        router.push('/login');
+                    }
                     break
                 case 403:
                     ElMessage.error('权限不足')

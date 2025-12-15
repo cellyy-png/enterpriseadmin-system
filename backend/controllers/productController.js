@@ -1,6 +1,8 @@
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const mongoose = require('mongoose');
+const path = require('path');
+const fs = require('fs').promises;
 
 exports.getAllProducts = async (req, res) => {
     try {
@@ -100,6 +102,41 @@ exports.createProduct = async (req, res) => {
     } catch (error) {
         console.error('创建商品错误:', error);
         res.status(500).json({ error: '创建商品失败' });
+    }
+};
+
+// 保存上传的图片
+exports.uploadProductImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: '请选择图片文件' });
+        }
+
+        // 检查文件大小 (最大5MB)
+        if (req.file.size > 5 * 1024 * 1024) {
+            // 删除已上传的文件
+            await fs.unlink(req.file.path);
+            return res.status(400).json({ error: '图片文件过大，最大支持5MB' });
+        }
+
+        // 检查文件类型
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!allowedTypes.includes(req.file.mimetype)) {
+            // 删除已上传的文件
+            await fs.unlink(req.file.path);
+            return res.status(400).json({ error: '不支持的图片格式，仅支持 JPG、PNG、GIF' });
+        }
+
+        // 构造图片访问URL
+        const imageUrl = `/uploads/${req.file.filename}`;
+        
+        res.json({
+            message: '图片上传成功',
+            url: imageUrl
+        });
+    } catch (error) {
+        console.error('上传图片错误:', error);
+        res.status(500).json({ error: '图片上传失败' });
     }
 };
 

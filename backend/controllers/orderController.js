@@ -1,19 +1,17 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
 exports.createOrder = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
     try {
-        const { items, shippingAddress, paymentMethod, notes } = req.body;
+        const { items, shippingAddress, paymentMethod, notes, status, paymentStatus } = req.body;
 
         // 验证商品库存并计算总价
         let totalAmount = 0;
         const orderItems = [];
 
         for (const item of items) {
-            const product = await Product.findById(item.product).session(session);
+            const product = await Product.findById(item.product);
 
             if (!product) {
                 throw new Error(`商品 ${item.product} 不存在`);
@@ -26,7 +24,7 @@ exports.createOrder = async (req, res) => {
             // 扣减库存
             product.stock -= item.quantity;
             product.sales += item.quantity;
-            await product.save({ session });
+            await product.save();
 
             const subtotal = product.price * item.quantity;
             totalAmount += subtotal;
@@ -40,27 +38,26 @@ exports.createOrder = async (req, res) => {
         }
 
         // 创建订单
-        const order = await Order.create([{
+        const order = new Order({
             user: req.user._id,
             items: orderItems,
             totalAmount,
             shippingAddress,
             paymentMethod,
-            notes
-        }], { session });
-
-        await session.commitTransaction();
+            notes,
+            status: status || 'pending',
+            paymentStatus: paymentStatus || 'unpaid'
+        });
+        
+        await order.save();
 
         res.status(201).json({
             message: '订单创建成功',
-            order: order[0]
+            order
         });
     } catch (error) {
-        await session.abortTransaction();
         console.error('创建订单错误:', error);
         res.status(500).json({ error: error.message || '创建订单失败' });
-    } finally {
-        session.endSession();
     }
 };
 
@@ -137,6 +134,44 @@ exports.getOrderById = async (req, res) => {
         res.json({ order });
     } catch (error) {
         res.status(500).json({ error: '获取订单详情失败' });
+    }
+};
+
+exports.updateOrder = async (req, res) => {
+    try {
+        const { items, shippingAddress, paymentMethod, notes, status, paymentStatus } = req.body;
+        
+        const order = await Order.findById(req.params.id);
+        if (!order) {
+            return res.status(404).json({ error: '订单不存在' });
+        }
+
+        // 更新订单字段
+        if (items) order.items = items;
+        if (shippingAddress) order.shippingAddress = shippingAddress;
+        if (paymentMethod) order.paymentMethod = paymentMethod;
+        if (notes !== undefined) order.notes = notes;
+        if (status) order.status = status;
+        if (paymentStatus) order.paymentStatus = paymentStatus;
+
+        // 重新计算总金额
+        let totalAmount = 0;
+        for (const item of order.items) {
+            totalAmount += item.price * item.quantity;
+        }
+        order.totalAmount = totalAmount;
+
+        await order.save();
+
+        // 填充关联数据
+        const populatedOrder = await Order.findById(order._id)
+            .populate('user', 'username email')
+            .populate('items.product', 'name sku images');
+
+        res.json({ message: '订单更新成功', order: populatedOrder });
+    } catch (error) {
+        console.error('更新订单错误:', error);
+        res.status(500).json({ error: '更新订单失败' });
     }
 };
 
@@ -230,5 +265,20 @@ exports.cancelOrder = async (req, res) => {
         res.status(500).json({ error: error.message || '取消订单失败' });
     } finally {
         session.endSession();
+    }
+};
+
+// 删除订单
+exports.deleteOrder = async (req, res) => {
+    try {
+        const order = await Order.findByIdAndDelete(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ error: '订单不存在' });
+        }
+
+        res.json({ message: '订单删除成功' });
+    } catch (error) {
+        res.status(500).json({ error: '删除订单失败' });
     }
 };

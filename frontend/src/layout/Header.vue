@@ -6,10 +6,8 @@
     </el-breadcrumb>
 
     <div class="header-actions">
-      <el-badge :value="notificationCount" class="notification-badge">
-        <el-button :icon="Bell" circle />
-      </el-badge>
-
+      <el-button :icon="Bell" circle />
+      
       <el-dropdown>
         <el-avatar :src="userAvatar" />
         <template #dropdown>
@@ -37,7 +35,6 @@ const userStore = useUserStore()
 
 const currentRoute = computed(() => route)
 const userAvatar = computed(() => userStore.user?.avatar)
-const notificationCount = computed(() => 3)
 
 const handleLogout = () => {
   userStore.logout()
@@ -56,10 +53,6 @@ const handleLogout = () => {
     display: flex;
     align-items: center;
     gap: 20px;
-
-    .notification-badge {
-      cursor: pointer;
-    }
   }
 }
 </style>

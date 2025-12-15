@@ -114,6 +114,7 @@ use([CanvasRenderer, LineChart, PieChart, GridComponent, TooltipComponent, Legen
 
 const overview = ref({})
 const salesTrend = ref([])
+const orderStatusStats = ref([])
 
 onMounted(() => {
   loadDashboardData()
@@ -121,12 +122,14 @@ onMounted(() => {
 
 const loadDashboardData = async () => {
   try {
-    const [overviewRes, salesRes] = await Promise.all([
+    const [overviewRes, salesRes, orderStatsRes] = await Promise.all([
       dashboardAPI.overview(),
-      dashboardAPI.salesTrend('7days')
+      dashboardAPI.salesTrend('7days'),
+      dashboardAPI.orderStatusStats()
     ])
     overview.value = overviewRes.data
     salesTrend.value = salesRes.data.salesData
+    orderStatusStats.value = orderStatsRes.data.stats
   } catch (error) {
     console.error('加载数据失败:', error)
   }
@@ -159,22 +162,48 @@ const salesTrendOption = computed(() => ({
   ]
 }))
 
-const orderStatusOption = computed(() => ({
-  tooltip: { trigger: 'item' },
-  legend: { orient: 'vertical', left: 'left' },
-  series: [
-    {
-      type: 'pie',
-      radius: '70%',
-      data: [
-        { value: 30, name: '待处理', itemStyle: { color: '#f7b84b' } },
-        { value: 45, name: '处理中', itemStyle: { color: '#5b8def' } },
-        { value: 80, name: '已完成', itemStyle: { color: '#49cc90' } },
-        { value: 5, name: '已取消', itemStyle: { color: '#f1556c' } }
-      ]
-    }
-  ]
-}))
+const orderStatusOption = computed(() => {
+  // 定义状态映射和颜色
+  const statusMap = {
+    pending: { name: '待处理', color: '#f7b84b' },
+    confirmed: { name: '已确认', color: '#5b8def' },
+    processing: { name: '处理中', color: '#49cc90' },
+    shipped: { name: '已发货', color: '#34c38f' },
+    delivered: { name: '已送达', color: '#00c853' },
+    cancelled: { name: '已取消', color: '#f1556c' }
+  };
+
+  // 处理从后端获取的数据
+  const processedData = orderStatusStats.value.map(stat => {
+    const statusInfo = statusMap[stat._id] || { name: stat._id || '未知状态', color: '#999' };
+    return {
+      value: stat.count,
+      name: statusInfo.name,
+      itemStyle: { color: statusInfo.color }
+    };
+  });
+
+  // 如果没有数据，显示默认空数据
+  if (processedData.length === 0) {
+    processedData.push({
+      value: 1,
+      name: '暂无数据',
+      itemStyle: { color: '#eee' }
+    });
+  }
+
+  return {
+    tooltip: { trigger: 'item' },
+    legend: { orient: 'vertical', left: 'left' },
+    series: [
+      {
+        type: 'pie',
+        radius: '70%',
+        data: processedData
+      }
+    ]
+  };
+})
 
 const handleGenerateReport = () => {
   ElMessage.success('报告生成中...')

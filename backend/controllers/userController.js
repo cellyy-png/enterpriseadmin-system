@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Role = require('../models/Role');
 const Order = require('../models/Order');
 
 exports.getAllUsers = async (req, res) => {
@@ -79,7 +80,7 @@ exports.updateUser = async (req, res) => {
             req.params.id,
             { username, email, status, role, department, phone },
             { new: true, runValidators: true }
-        ).populate('role');
+        ).populate('role', 'name displayName');
 
         if (!user) {
             return res.status(404).json({ error: '用户不存在' });
@@ -139,5 +140,68 @@ exports.getUserStats = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: '获取用户统计失败' });
+    }
+};
+
+exports.getAllRoles = async (req, res) => {
+    try {
+        const roles = await Role.find({}, 'name displayName');
+        res.json({ roles });
+    } catch (error) {
+        console.error('获取角色列表错误:', error);
+        res.status(500).json({ error: '获取角色列表失败' });
+    }
+};
+
+exports.createUser = async (req, res) => {
+    try {
+        const { username, email, password, role, status = 'active' } = req.body;
+
+        // 检查用户是否已存在
+        const existingUser = await User.findOne({
+            $or: [{ email }, { username }]
+        });
+
+        if (existingUser) {
+            return res.status(400).json({
+                error: existingUser.email === email ? '邮箱已被注册' : '用户名已存在'
+            });
+        }
+
+        // 分配默认角色
+        let assignedRole = null;
+        if (role) {
+            assignedRole = await Role.findById(role);
+        }
+        
+        // 如果没有指定角色或找不到指定角色，则分配默认"user"角色
+        if (!assignedRole) {
+            assignedRole = await Role.findOne({ name: 'user' });
+        }
+        
+        // 如果还找不到"user"角色，则抛出错误
+        if (!assignedRole) {
+            return res.status(500).json({ error: '系统中未找到默认用户角色' });
+        }
+
+        // 创建用户
+        const user = await User.create({
+            username,
+            email,
+            password,
+            role: assignedRole._id,
+            status
+        });
+
+        // 填充角色信息再返回
+        const populatedUser = await User.findById(user._id).populate('role', 'name displayName');
+
+        res.status(201).json({
+            message: '用户创建成功',
+            user: populatedUser
+        });
+    } catch (error) {
+        console.error('创建用户错误:', error);
+        res.status(500).json({ error: '创建用户失败' });
     }
 };

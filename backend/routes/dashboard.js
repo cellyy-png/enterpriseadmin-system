@@ -7,8 +7,6 @@ dashboardRouter.use(authenticate);
 
 dashboardRouter.get('/overview', dashboardController.getOverview);
 dashboardRouter.get('/sales-trend', dashboardController.getSalesTrend);
-// dashboardRouter.get('/user-stats', dashboardController.getUserStats);
-// dashboardRouter.get('/product-stats', dashboardController.getProductStats);
-// dashboardRouter.get('/order-stats', dashboardController.getOrderStats);
+dashboardRouter.get('/order-status-stats', dashboardController.getOrderStatusStats);
 
 module.exports = dashboardRouter;

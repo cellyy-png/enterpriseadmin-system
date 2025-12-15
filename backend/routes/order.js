@@ -12,11 +12,20 @@ orderRouter.post('/',
     validate(orderValidation.create),
     orderController.createOrder
 );
+orderRouter.put('/:id', 
+    checkPermission('order', 'update'),
+    orderController.updateOrder
+);
 orderRouter.put('/:id/status', orderController.updateOrderStatus);
 orderRouter.put('/:id/payment', orderController.updatePaymentStatus);
 orderRouter.delete('/:id',
     checkPermission('order', 'delete'),
     orderController.cancelOrder
+);
+
+orderRouter.delete('/:id/delete',
+    checkPermission('order', 'delete'),
+    orderController.deleteOrder
 );
 // orderRouter.get('/:id/tracking', orderController.getOrderTracking); // getOrderTracking 方法未定义
 

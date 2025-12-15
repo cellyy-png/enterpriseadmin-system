@@ -8,20 +8,31 @@ export const userAPI = {
     delete: (id) => axios.delete(`/users/${id}`)
 }
 
+export const roleAPI = {
+    list: () => axios.get('/users/roles')
+}
+
 export const productAPI = {
     list: (params) => axios.get('/products', { params }),
     detail: (id) => axios.get(`/products/${id}`),
     create: (data) => axios.post('/products', data),
     update: (id, data) => axios.put(`/products/${id}`, data),
-    delete: (id) => axios.delete(`/products/${id}`)
+    delete: (id) => axios.delete(`/products/${id}`),
+    uploadImage: (formData) => axios.post('/products/upload-image', formData, {
+        headers: { 
+            'Content-Type': 'multipart/form-data',
+        }
+    })
 }
 
 export const orderAPI = {
     list: (params) => axios.get('/orders', { params }),
     detail: (id) => axios.get(`/orders/${id}`),
     create: (data) => axios.post('/orders', data),
+    update: (id, data) => axios.put(`/orders/${id}`, data),
     updateStatus: (id, status) => axios.put(`/orders/${id}/status`, { status }),
-    cancel: (id) => axios.delete(`/orders/${id}`)
+    updatePayment: (id, paymentStatus) => axios.put(`/orders/${id}/payment`, { paymentStatus }),
+    delete: (id) => axios.delete(`/orders/${id}/delete`)
 }
 
 export const categoryAPI = {
@@ -35,6 +46,7 @@ export const categoryAPI = {
 export const dashboardAPI = {
     overview: () => axios.get('/dashboard/overview'),
     salesTrend: (period) => axios.get('/dashboard/sales-trend', { params: { period } }),
+    orderStatusStats: () => axios.get('/dashboard/order-status-stats'),
     userStats: () => axios.get('/dashboard/user-stats'),
     productStats: () => axios.get('/dashboard/product-stats')
 }

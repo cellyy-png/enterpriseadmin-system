@@ -67,12 +67,14 @@ exports.login = async (req, res) => {
             .populate('role');
 
         if (!user) {
+            console.log('用户不存在:', email);
             return res.status(401).json({ error: '邮箱或密码错误' });
         }
 
         // 验证密码
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
+            console.log('密码错误:', email);
             return res.status(401).json({ error: '邮箱或密码错误' });
         }
 
@@ -130,6 +132,9 @@ exports.refreshToken = async (req, res) => {
         });
     } catch (error) {
         console.error('刷新 Token 错误:', error);
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ error: '登录已过期，请重新登录' });
+        }
         res.status(500).json({ error: 'Token 刷新失败' });
     }
 };

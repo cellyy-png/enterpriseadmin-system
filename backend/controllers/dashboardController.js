@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
+const User = require('../models/User');
+const Order = require('../models/Order');
+const Product = require('../models/Product');
 
 exports.getOverview = async (req, res) => {
     try {
-        // 总用户数
-        const totalUsers = await User.countDocuments({ status: 'active' });
+        // 总用户数（所有用户）
+        const totalUsers = await User.countDocuments();
 
         // 总订单数
         const totalOrders = await Order.countDocuments();
@@ -73,6 +76,25 @@ exports.getSalesTrend = async (req, res) => {
 
         res.json({ salesData });
     } catch (error) {
+        console.error('获取销售趋势错误:', error);
         res.status(500).json({ error: '获取销售趋势失败' });
+    }
+};
+
+exports.getOrderStatusStats = async (req, res) => {
+    try {
+        const stats = await Order.aggregate([
+            {
+                $group: {
+                    _id: '$status',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        res.json({ stats });
+    } catch (error) {
+        console.error('获取订单状态统计错误:', error);
+        res.status(500).json({ error: '获取订单状态统计失败' });
     }
 };

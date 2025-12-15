@@ -52,7 +52,7 @@
         <el-table-column prop="email" label="邮箱" min-width="200" />
         <el-table-column label="角色" min-width="100">
           <template #default="{ row }">
-            <el-tag>{{ row.role?.displayName }}</el-tag>
+            <el-tag>{{ row.role?.displayName || '未分配角色' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="状态" min-width="100">
@@ -122,6 +122,16 @@
         <el-form-item v-if="!formData._id" label="密码" prop="password">
           <el-input v-model="formData.password" type="password" />
         </el-form-item>
+        <el-form-item label="角色" prop="role">
+          <el-select v-model="formData.role" placeholder="请选择角色" style="width: 100%">
+            <el-option
+                v-for="role in roles"
+                :key="role._id"
+                :label="role.displayName"
+                :value="role._id">
+            </el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="formData.status">
             <el-radio label="active">激活</el-radio>
@@ -138,11 +148,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { Plus, Search, Refresh, Edit, Delete } from '@element-plus/icons-vue'
+import { ref, reactive, onMounted, onBeforeMount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { userAPI, roleAPI } from '@/utils/request'
 import dayjs from 'dayjs'
-import { userAPI } from '@/utils/request'
 
 const loading = ref(false)
 const users = ref([])
@@ -162,6 +171,7 @@ const formData = reactive({
   username: '',
   email: '',
   password: '',
+  role: '',
   status: 'active'
 })
 
@@ -171,8 +181,15 @@ const formRules = {
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
   ],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  role: [{ required: true, message: '请选择角色', trigger: 'change' }]
 }
+
+const roles = ref([])
+
+onBeforeMount(async () => {
+  await loadRoles()
+})
 
 onMounted(() => {
   loadUsers()
@@ -191,19 +208,34 @@ const loadUsers = async () => {
   }
 }
 
+const loadRoles = async () => {
+  try {
+    const { data } = await roleAPI.list()
+    roles.value = data.roles
+  } catch (error) {
+    console.error('加载角色失败:', error)
+    ElMessage.error('加载角色失败')
+  }
+}
+
 const handleAdd = () => {
   Object.assign(formData, {
     _id: '',
     username: '',
     email: '',
     password: '',
+    role: '',
     status: 'active'
   })
   dialogVisible.value = true
 }
 
 const handleEdit = (row) => {
-  Object.assign(formData, { ...row, password: '' })
+  Object.assign(formData, { 
+    ...row, 
+    password: '',
+    role: row.role?._id || row.role || ''
+  })
   dialogVisible.value = true
 }
 
