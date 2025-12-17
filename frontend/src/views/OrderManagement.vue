@@ -9,6 +9,14 @@
 
     <el-card class="filter-card" shadow="never">
       <el-form :inline="true" :model="filters">
+        <el-form-item label="订单号">
+          <el-input 
+            v-model="filters.orderNumber" 
+            placeholder="请输入订单号" 
+            clearable
+            @keyup.enter="loadOrders"
+          />
+        </el-form-item>
         <el-form-item>
           <el-select v-model="filters.status" placeholder="订单状态" clearable>
             <el-option label="全部状态" value="" />
@@ -297,7 +305,8 @@ const filters = reactive({
   page: 1,
   limit: 10,
   status: '',
-  paymentStatus: ''
+  paymentStatus: '',
+  orderNumber: ''
 })
 
 const formData = reactive({
@@ -531,7 +540,13 @@ const resetFormData = () => {
 }
 
 const handleReset = () => {
-  Object.assign(filters, { page: 1, status: '', paymentStatus: '' })
+  Object.assign(filters, { 
+    page: 1, 
+    limit: 10, 
+    status: '', 
+    paymentStatus: '',
+    orderNumber: ''
+  })
   dateRange.value = []
   loadOrders()
 }

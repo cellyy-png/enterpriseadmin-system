@@ -16,17 +16,8 @@ router.post('/analyze-data',
 // AI 客服对话
 router.post('/chat', aiController.aiChat);
 
-// AI 生成报告
-router.post('/generate-report',
-    checkPermission('ai', 'read'),
-    aiController.generateReport
-);
-
-// AI 预测销量
-router.post('/predict-sales',
-    checkPermission('ai', 'read'),
-    aiController.predictSales
-);
+// AI 数据统计
+router.post('/data-statistics', aiController.getDataStatistics);
 
 // AI 商品推荐
 router.post('/recommend-products', aiController.recommendProducts);

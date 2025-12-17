@@ -30,7 +30,8 @@
     "mongodb": "^6.3.0",
     "mongodb-memory-server": "^10.4.1",
     "mongoose": "^8.0.3",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "multer": "^2.0.2"
   },
   "devDependencies": {
     "jest": "^29.7.0",

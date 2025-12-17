@@ -122,8 +122,7 @@ const messagesRef = ref(null)
 
 const quickActions = [
   { key: 'analyze', label: '数据分析' },
-  { key: 'report', label: '生成报告' },
-  { key: 'predict', label: '销量预测' },
+  { key: 'statistics', label: '数据统计' },
   { key: 'recommend', label: '商品推荐' }
 ]
 
@@ -135,16 +134,10 @@ const aiTools = [
     description: '自动分析销售、用户、商品等数据，生成可视化报告'
   },
   {
-    key: 'report',
+    key: 'statistics',
     icon: '',
-    title: '自动报告生成',
-    description: '一键生成日报、周报、月报等运营报告'
-  },
-  {
-    key: 'predict',
-    icon: '',
-    title: '销量预测',
-    description: '基于历史数据预测商品未来销量趋势'
+    title: '数据统计',
+    description: '实时统计系统关键业务指标'
   },
   {
     key: 'recommend',
@@ -213,18 +206,17 @@ const handleQuickAction = async (action) => {
           timestamp: new Date()
         })
         break
-      case 'report':
-        response = await aiAPI.generateReport('月度运营报告', '30days')
+      case 'statistics':
+        response = await aiAPI.getDataStatistics()
+        const stats = response.data.statistics
         messages.value.push({
           type: 'assistant',
-          content: response.data.report,
-          timestamp: new Date()
-        })
-        break
-      case 'predict':
-        messages.value.push({
-          type: 'assistant',
-          content: '请提供商品ID，我将为您预测未来7天的销量。',
+          content: `系统数据统计：
+- 总用户数: ${stats.totalUsers}
+- 总订单数: ${stats.totalOrders}
+- 总销售额: ¥${stats.totalSales.toLocaleString()}
+- 在售商品数: ${stats.totalProducts}
+- 平均订单金额: ¥${stats.avgOrderValue}`,
           timestamp: new Date()
         })
         break
@@ -242,6 +234,11 @@ const handleQuickAction = async (action) => {
     }
   } catch (error) {
     ElMessage.error('操作失败')
+    messages.value.push({
+      type: 'error',
+      content: '操作失败，请稍后重试',
+      timestamp: new Date()
+    })
   } finally {
     loading.value = false
     scrollToBottom()

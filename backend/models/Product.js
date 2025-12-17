@@ -52,7 +52,7 @@ const productSchema = new mongoose.Schema({
 });
 
 // 索引
-productSchema.index({ name: 'text', description: 'text' });
+productSchema.index({ name: 'text', description: 'text', sku: 'text' });
 productSchema.index({ category: 1 });
 productSchema.index({ status: 1 });
 productSchema.index({ price: 1 });

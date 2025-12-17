@@ -12,23 +12,24 @@
       <el-form :inline="true" :model="filters">
         <el-form-item>
           <el-input
-              v-model="filters.search"
-              placeholder="搜索商品名称或SKU"
-              :prefix-icon="Search"
-              clearable
+            v-model="filters.search"
+            placeholder="搜索商品名称或SKU"
+            :prefix-icon="Search"
+            clearable
+            @keyup.enter="handleSearch"
           />
         </el-form-item>
         <el-form-item>
           <el-select
-              v-model="filters.category"
-              placeholder="商品分类"
-              clearable
+            v-model="filters.category"
+            placeholder="商品分类"
+            clearable
           >
             <el-option
-                v-for="cat in categories"
-                :key="cat._id"
-                :label="cat.name"
-                :value="cat._id"
+              v-for="cat in categories"
+              :key="cat._id"
+              :label="cat.name"
+              :value="cat._id"
             />
           </el-select>
         </el-form-item>
@@ -40,7 +41,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :icon="Search" @click="loadProducts">
+          <el-button type="primary" :icon="Search" @click="handleSearch">
             搜索
           </el-button>
           <el-button :icon="Refresh" @click="handleReset">重置</el-button>
@@ -54,9 +55,9 @@
         <el-table-column label="图片" width="80">
           <template #default="{ row }">
             <el-image
-                :src="row.images?.[0] || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCAzMGMxMC0xMCAzMC0xMCA0MCAwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iOCIgZmlsbD0ibm9uZSIvPjwvc3ZnPg=='"
-                fit="cover"
-                style="width: 50px; height: 50px; border-radius: 8px"
+              :src="row.images?.[0] || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCAzMGMxMC0xMCAzMC0xMCA0MCAwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iOCIgZmlsbD0ibm9uZSIvPjwvc3ZnPg=='"
+              fit="cover"
+              style="width: 50px; height: 50px; border-radius: 8px"
             />
           </template>
         </el-table-column>
@@ -100,27 +101,27 @@
       </el-table>
 
       <el-pagination
-          v-model:current-page="filters.page"
-          v-model:page-size="filters.limit"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadProducts"
-          @current-change="loadProducts"
+        v-model:current-page="filters.page"
+        v-model:page-size="filters.limit"
+        :total="pagination.total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="loadProducts"
+        @current-change="loadProducts"
       />
     </el-card>
 
     <!-- 商品表单弹窗 -->
     <el-dialog
-        v-model="dialogVisible"
-        :title="formData._id ? '编辑商品' : '新增商品'"
-        width="800px"
+      v-model="dialogVisible"
+      :title="formData._id ? '编辑商品' : '新增商品'"
+      width="800px"
     >
       <el-form
-          ref="formRef"
-          :model="formData"
-          :rules="formRules"
-          label-width="100px"
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        label-width="100px"
       >
         <el-row :gutter="20">
           <el-col :span="12">
@@ -137,9 +138,9 @@
 
         <el-form-item label="商品描述">
           <el-input
-              v-model="formData.description"
-              type="textarea"
-              :rows="4"
+            v-model="formData.description"
+            type="textarea"
+            :rows="4"
           />
         </el-form-item>
 
@@ -147,29 +148,29 @@
           <el-col :span="8">
             <el-form-item label="销售价格" prop="price">
               <el-input-number
-                  v-model="formData.price"
-                  :min="0"
-                  :precision="2"
-                  style="width: 100%"
+                v-model="formData.price"
+                :min="0"
+                :precision="2"
+                style="width: 100%"
               />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="原价">
               <el-input-number
-                  v-model="formData.originalPrice"
-                  :min="0"
-                  :precision="2"
-                  style="width: 100%"
+                v-model="formData.originalPrice"
+                :min="0"
+                :precision="2"
+                style="width: 100%"
               />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="库存" prop="stock">
               <el-input-number
-                  v-model="formData.stock"
-                  :min="0"
-                  style="width: 100%"
+                v-model="formData.stock"
+                :min="0"
+                style="width: 100%"
               />
             </el-form-item>
           </el-col>
@@ -180,10 +181,10 @@
             <el-form-item label="分类" prop="category">
               <el-select v-model="formData.category" style="width: 100%">
                 <el-option
-                    v-for="cat in categories"
-                    :key="cat._id"
-                    :label="cat.name"
-                    :value="cat._id"
+                  v-for="cat in categories"
+                  :key="cat._id"
+                  :label="cat.name"
+                  :value="cat._id"
                 />
               </el-select>
             </el-form-item>
@@ -201,27 +202,28 @@
 
         <el-form-item label="标签">
           <el-input
-              v-model="formData.tags"
-              placeholder="多个标签用逗号分隔，如: 热销,新品"
+            v-model="formData.tags"
+            placeholder="多个标签用逗号分隔，如: 热销,新品"
           />
         </el-form-item>
 
         <el-form-item label="商品图片">
           <el-upload
-              v-if="!formData.imagePreview"
-              class="avatar-uploader"
-              action="/api/products/upload-image"
-              :show-file-list="false"
-              :on-success="handleImageSuccess"
-              :on-error="handleImageError"
-              :before-upload="beforeImageUpload"
-              :headers="uploadHeaders"
-              name="image"
+            v-if="!formData.imagePreview"
+            class="avatar-uploader"
+            action="/api/products/upload-image"
+            :show-file-list="false"
+            :on-success="handleImageSuccess"
+            :on-error="handleImageError"
+            :before-upload="beforeImageUpload"
+            :headers="uploadHeaders"
+            name="image"
           >
             <el-button type="primary" :icon="Upload">上传图片</el-button>
             <div class="el-upload__tip">jpg/png/gif 文件，大小不超过 5MB</div>
           </el-upload>
           <div v-else class="image-preview">
+            <!-- 注意：这里去掉了 hardcode 的 localhost:5000 -->
             <img :src="formData.imagePreview || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIzMCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0zMCAzMGMxMC0xMCAzMC0xMCA0MCAwIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iOCIgZmlsbD0ibm9uZSIvPjwvc3ZnPg=='" class="preview-image" />
             <el-button type="danger" @click="removeImage">删除图片</el-button>
           </div>
@@ -335,7 +337,8 @@ const handleEdit = (row) => {
     category: row.category?._id,
     tags: row.tags?.join(', ') || '',
     images: row.images?.[0] || '',
-    imagePreview: row.images?.[0] ? 'http://localhost:5000' + row.images?.[0] : ''
+    // 修改处：直接使用相对路径，不拼接 localhost:5000
+    imagePreview: row.images?.[0] || ''
   })
   // 更新上传头部信息
   uploadHeaders.Authorization = `Bearer ${localStorage.getItem('token')}`
@@ -366,10 +369,10 @@ const handleSubmit = async () => {
       tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
       images: formData.images ? [formData.images] : []
     }
-    
+
     // 删除预览字段
     delete submitData.imagePreview
-    
+
     // 删除空的 _id 字段
     if (!submitData._id) {
       delete submitData._id;
@@ -397,6 +400,12 @@ const handleReset = () => {
   loadProducts()
 }
 
+// 添加一个新的方法来处理搜索
+const handleSearch = () => {
+  filters.page = 1 // 重置页码为第一页
+  loadProducts()
+}
+
 const getStatusType = (status) => {
   const map = { active: 'success', inactive: 'danger', out_of_stock: 'warning' }
   return map[status] || ''
@@ -409,7 +418,8 @@ const getStatusLabel = (status) => {
 
 const handleImageSuccess = (response) => {
   formData.images = response.url;
-  formData.imagePreview = 'http://localhost:5000' + response.url;
+  // 修改处：直接使用相对路径，不拼接 localhost:5000
+  formData.imagePreview = response.url;
   ElMessage.success('图片上传成功');
 };
 

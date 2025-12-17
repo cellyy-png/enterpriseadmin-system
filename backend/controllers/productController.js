@@ -27,7 +27,12 @@ exports.getAllProducts = async (req, res) => {
         query.price = { $gte: parseFloat(minPrice), $lte: parseFloat(maxPrice) };
 
         if (search) {
-            query.$text = { $search: search };
+            // 只使用正则表达式搜索，避免与文本索引冲突
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { sku: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
         }
 
         // 排序
@@ -181,10 +186,14 @@ exports.searchProducts = async (req, res) => {
         }
 
         const products = await Product.find(
-            { $text: { $search: q } },
-            { score: { $meta: 'textScore' } }
+            { 
+                $or: [
+                    { name: { $regex: q, $options: 'i' } },
+                    { sku: { $regex: q, $options: 'i' } },
+                    { description: { $regex: q, $options: 'i' } }
+                ]
+            }
         )
-            .sort({ score: { $meta: 'textScore' } })
             .limit(20)
             .populate('category');
 

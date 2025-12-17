@@ -54,7 +54,6 @@ export const dashboardAPI = {
 export const aiAPI = {
     chat: (message) => axios.post('/ai/chat', { message }),
     analyzeData: (dataType, timeRange) => axios.post('/ai/analyze-data', { dataType, timeRange }),
-    generateReport: (reportType, period) => axios.post('/ai/generate-report', { reportType, period }),
-    predictSales: (productId, days) => axios.post('/ai/predict-sales', { productId, days }),
+    getDataStatistics: () => axios.post('/ai/data-statistics'),
     recommendProducts: () => axios.post('/ai/recommend-products')
 }

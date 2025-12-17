@@ -70,7 +70,8 @@ exports.getAllOrders = async (req, res) => {
             paymentStatus = '',
             startDate = '',
             endDate = '',
-            userId = ''
+            userId = '',
+            orderNumber = ''
         } = req.query;
 
         const query = {};
@@ -84,6 +85,11 @@ exports.getAllOrders = async (req, res) => {
 
         if (status) query.status = status;
         if (paymentStatus) query.paymentStatus = paymentStatus;
+        
+        // 添加订单号搜索功能
+        if (orderNumber) {
+            query.orderNumber = { $regex: orderNumber, $options: 'i' };
+        }
 
         if (startDate || endDate) {
             query.createdAt = {};
