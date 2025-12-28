@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const aiController = require('../controllers/aiController');
-const { authenticate, checkPermission } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
+const { checkPermission } = require('../middleware/permission');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
 router.use(authenticate);

@@ -53,7 +53,8 @@ exports.register = async (req, res) => {
         });
     } catch (error) {
         console.error('注册错误:', error);
-        res.status(500).json({ error: '注册失败' });
+        console.error('错误详情:', error.message, error.stack);
+        res.status(500).json({ error: '注册失败', details: error.message });
     }
 };
 
@@ -62,19 +63,18 @@ exports.login = async (req, res) => {
         const { email, password } = req.body;
 
         // 查找用户（包含密码字段）
+        console.log('查找用户:', email);
         const user = await User.findOne({ email })
             .select('+password')
             .populate('role');
 
         if (!user) {
-            console.log('用户不存在:', email);
             return res.status(401).json({ error: '邮箱或密码错误' });
         }
 
         // 验证密码
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
-            console.log('密码错误:', email);
             return res.status(401).json({ error: '邮箱或密码错误' });
         }
 
@@ -104,7 +104,8 @@ exports.login = async (req, res) => {
         });
     } catch (error) {
         console.error('登录错误:', error);
-        res.status(500).json({ error: '登录失败' });
+        console.error('错误详情:', error.message, error.stack);
+        res.status(500).json({ error: '登录失败', details: error.message });
     }
 };
 

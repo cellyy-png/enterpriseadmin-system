@@ -1,3 +1,5 @@
+const Role = require('../models/Role');
+
 // 检查用户角色
 exports.requireRole = (...allowedRoles) => {
     return (req, res, next) => {
@@ -23,16 +25,23 @@ exports.requireRole = (...allowedRoles) => {
 exports.checkPermission = (resource, action) => {
     return async (req, res, next) => {
         try {
+            console.log(`权限检查: resource=${resource}, action=${action}`);
+            console.log('用户信息:', req.user);
+            
             if (!req.user || !req.user.role) {
+                console.log('用户或角色信息缺失');
                 return res.status(403).json({ error: '无权限访问' });
             }
 
             // 超级管理员拥有所有权限
             if (req.user.role.name === 'super_admin') {
+                console.log('超级管理员，跳过权限检查');
                 return next();
             }
 
+            console.log('用户角色ID:', req.user.role._id);
             const role = await Role.findById(req.user.role._id);
+            console.log('角色信息:', role);
 
             if (!role) {
                 return res.status(403).json({ error: '角色不存在' });
@@ -40,6 +49,7 @@ exports.checkPermission = (resource, action) => {
 
             // 查找资源权限
             const permission = role.permissions.find(p => p.resource === resource);
+            console.log('权限查找结果:', permission);
 
             if (!permission || !permission.actions.includes(action)) {
                 return res.status(403).json({
@@ -50,6 +60,7 @@ exports.checkPermission = (resource, action) => {
                 });
             }
 
+            console.log('权限检查通过');
             next();
         } catch (error) {
             console.error('权限检查错误:', error);

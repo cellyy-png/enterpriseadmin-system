@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'inactive', 'suspended'],
+        enum: ['active', 'inactive', 'suspended', 'pending', 'rejected'],
         default: 'active'
     },
     phone: String,
@@ -42,20 +42,24 @@ const userSchema = new mongoose.Schema({
     lastLogin: Date,
     loginCount: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    // 新增字段：拒绝理由
+    rejectReason: {
+        type: String,
+        default: null
+    }
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
 
-// 索引优化
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+// 索引优化 - 移除了重复的email和username索引，因为unique: true已自动创建
 userSchema.index({ status: 1 });
 
 // 密码加密中间件
 userSchema.pre('save', async function(next) {
+    // 只有在密码被修改时才进行哈希
     if (!this.isModified('password')) return next();
     this.password = await bcrypt.hash(this.password, 12);
     next();

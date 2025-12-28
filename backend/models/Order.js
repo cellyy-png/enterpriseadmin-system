@@ -67,8 +67,7 @@ const orderSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// 索引
-orderSchema.index({ orderNumber: 1 });
+// 索引 - 移除了重复的orderNumber索引，因为unique: true已自动创建
 orderSchema.index({ user: 1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ createdAt: -1 });

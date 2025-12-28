@@ -11,6 +11,12 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true, // 允许外部访问
+    strictPort: true, // 如果端口被占用则抛出错误而不是尝试下一个可用端口
+    hmr: {
+      host: 'localhost',
+      port: 3000
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

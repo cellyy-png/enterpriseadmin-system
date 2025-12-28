@@ -127,11 +127,17 @@ const loadDashboardData = async () => {
       dashboardAPI.salesTrend('7days'),
       dashboardAPI.orderStatusStats()
     ])
-    overview.value = overviewRes.data
-    salesTrend.value = salesRes.data.salesData
-    orderStatusStats.value = orderStatsRes.data.stats
+    // 修复：根据实际后端API响应结构调整数据访问路径
+    overview.value = overviewRes // API直接返回数据对象
+    salesTrend.value = salesRes?.salesData || [] // API返回 { salesData: [...] }
+    orderStatusStats.value = orderStatsRes?.stats || [] // API返回 { stats: [...] }
   } catch (error) {
     console.error('加载数据失败:', error)
+    // 设置默认值以避免渲染错误
+    overview.value = {}
+    salesTrend.value = []
+    orderStatusStats.value = []
+    ElMessage.error('加载数据失败: ' + (error.message || '未知错误'))
   }
 }
 

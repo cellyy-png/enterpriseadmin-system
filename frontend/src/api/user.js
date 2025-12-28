@@ -1,4 +1,5 @@
 import axios from '@/utils/axios'
+import request from '@/utils/request';
 
 export const userAPI = {
   // 获取用户列表
@@ -25,3 +26,13 @@ export const userAPI = {
   // 导出用户数据
   export: (params) => axios.get('/users/export', { params, responseType: 'blob' })
 }
+
+// 获取商家申请列表
+export const getMerchantApplications = () => {
+  return axios.get('/users/merchant-applications');
+};
+
+// 审核商家 status: 'active' | 'rejected'
+export const auditMerchant = (id, data) => {
+  return axios.put(`/users/merchant-audit/${id}`, data);
+};

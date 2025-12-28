@@ -91,7 +91,34 @@
     </el-form-item>
 
     <el-form-item label="商品图片">
-      <el-input v-model="formData.images" placeholder="图片URL" />
+      <div class="image-upload">
+        <el-upload
+          class="upload"
+          :auto-upload="false"
+          :show-file-list="false"
+          :on-change="handleImageChange"
+          accept="image/*"
+        >
+          <el-button size="small" type="primary">选择图片</el-button>
+        </el-upload>
+        <div v-if="imagePreview" class="preview-container">
+          <img :src="imagePreview" :alt="formData.name" class="preview-image" />
+          <el-button 
+            size="small" 
+            type="danger" 
+            @click.prevent="removeImage"
+            class="remove-btn"
+          >
+            删除
+          </el-button>
+        </div>
+        <!-- 兼容原有图片URL输入 -->
+        <el-input 
+          v-model="formData.images" 
+          placeholder="或输入图片URL" 
+          v-if="!imagePreview"
+        />
+      </div>
     </el-form-item>
 
     <el-form-item>
@@ -135,6 +162,29 @@ const formData = reactive({
   images: props.product?.images?.[0] || ''
 })
 
+// 图片预览相关
+const imagePreview = ref('')
+
+// 初始化时如果有图片URL，显示预览
+if (formData.images) {
+  imagePreview.value = formData.images
+}
+
+const handleImageChange = (file) => {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    imagePreview.value = e.target.result
+    // 清空原有的图片URL，优先使用上传的图片
+    formData.images = ''
+  }
+  reader.readAsDataURL(file.raw)
+}
+
+const removeImage = () => {
+  imagePreview.value = ''
+  formData.images = ''
+}
+
 const rules = {
   name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
   sku: [{ required: true, message: '请输入SKU', trigger: 'blur' }],
@@ -149,7 +199,8 @@ const handleSubmit = async () => {
       const data = {
         ...formData,
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-        images: formData.images ? [formData.images] : []
+        // 如果有上传的图片，使用预览图片URL，否则使用输入的URL
+        images: imagePreview.value ? [imagePreview.value] : formData.images ? [formData.images] : []
       }
       emit('submit', data)
     }
@@ -160,3 +211,33 @@ const handleCancel = () => {
   emit('cancel')
 }
 </script>
+
+<style scoped>
+.image-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.preview-image {
+  max-width: 100px;
+  max-height: 100px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid #e0e6ed;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.remove-btn {
+  margin-top: 5px;
+}
+</style>

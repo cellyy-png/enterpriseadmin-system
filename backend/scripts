@@ -1,0 +1,97 @@
+const axios = require('axios');
+
+// 创建一个基础的axios实例用于测试
+const apiClient = axios.create({
+    baseURL: 'http://localhost:5000',
+    timeout: 30000
+});
+
+let authToken = '';
+
+async function testMerchantAuditFlow() {
+    console.log('开始测试商家入驻审核流程...\n');
+    
+    // 首先登录获取token
+    try {
+        console.log('1. 登录获取认证令牌');
+        const loginResponse = await apiClient.post('/api/auth/login', {
+            email: 'admin@example.com',
+            password: 'Admin123'
+        });
+        console.log('   登录成功，状态:', loginResponse.status);
+        authToken = loginResponse.data.token;
+        console.log('   获取到令牌，长度:', authToken.length);
+    } catch (error) {
+        console.log('   登录错误:', error.message);
+        if (error.response) {
+            console.log('   错误状态:', error.response.status);
+            console.log('   错误数据:', error.response.data);
+        }
+        return;
+    }
+    
+    // 设置默认认证头
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+    
+    // 测试获取商家申请列表
+    try {
+        console.log('\n2. 测试获取商家申请列表 /api/users/merchant-applications');
+        const applicationsResponse = await apiClient.get('/api/users/merchant-applications');
+        console.log('   响应状态:', applicationsResponse.status);
+        console.log('   申请数量:', applicationsResponse.data?.data?.length || 0);
+        console.log('   数据:', JSON.stringify(applicationsResponse.data, null, 2));
+    } catch (error) {
+        console.log('   错误:', error.message);
+        if (error.response) {
+            console.log('   错误状态:', error.response.status);
+            console.log('   错误数据:', JSON.stringify(error.response.data, null, 2));
+        }
+    }
+    
+    // 创建一个测试商家申请
+    try {
+        console.log('\n3. 创建测试商家申请');
+        const merchantAppResponse = await apiClient.post('/api/users/merchant-application', {
+            username: 'test_merchant_' + Date.now(),
+            email: 'test_merchant_' + Date.now() + '@example.com',
+            password: 'Test123456'
+        });
+        console.log('   创建商家申请状态:', merchantAppResponse.status);
+        console.log('   响应数据:', JSON.stringify(merchantAppResponse.data, null, 2));
+    } catch (error) {
+        console.log('   创建商家申请错误:', error.message);
+        if (error.response) {
+            console.log('   错误状态:', error.response.status);
+            console.log('   错误数据:', JSON.stringify(error.response.data, null, 2));
+        }
+    }
+    
+    // 再次获取商家申请列表
+    try {
+        console.log('\n4. 再次获取商家申请列表');
+        const applicationsResponse = await apiClient.get('/api/users/merchant-applications');
+        console.log('   响应状态:', applicationsResponse.status);
+        console.log('   申请数量:', applicationsResponse.data?.data?.length || 0);
+        console.log('   数据:', JSON.stringify(applicationsResponse.data, null, 2));
+        
+        // 如果有申请数据，尝试审核第一个
+        if (applicationsResponse.data?.data?.length > 0) {
+            const firstApplication = applicationsResponse.data.data[0];
+            console.log('\n5. 审核第一个商家申请 ID:', firstApplication._id);
+            
+            const auditResponse = await apiClient.put(`/api/users/merchant-audit/${firstApplication._id}`, {
+                status: 'active'
+            });
+            console.log('   审核响应状态:', auditResponse.status);
+            console.log('   审核响应数据:', JSON.stringify(auditResponse.data, null, 2));
+        }
+    } catch (error) {
+        console.log('   获取或审核商家申请错误:', error.message);
+        if (error.response) {
+            console.log('   错误状态:', error.response.status);
+            console.log('   错误数据:', JSON.stringify(error.response.data, null, 2));
+        }
+    }
+}
+
+testMerchantAuditFlow();

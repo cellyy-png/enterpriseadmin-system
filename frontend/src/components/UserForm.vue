@@ -46,6 +46,8 @@
         <el-radio label="active">激活</el-radio>
         <el-radio label="inactive">停用</el-radio>
         <el-radio label="suspended">封禁</el-radio>
+        <el-radio label="pending">待审核</el-radio>
+        <el-radio label="rejected">已拒绝</el-radio>
       </el-radio-group>
     </el-form-item>
 

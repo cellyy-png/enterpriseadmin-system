@@ -242,6 +242,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { Plus, Search, Refresh, Upload } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productAPI, categoryAPI } from '@/utils/request'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const loading = ref(false)
 const products = ref([])
@@ -293,9 +296,15 @@ onMounted(() => {
 const loadProducts = async () => {
   loading.value = true
   try {
-    const { data } = await productAPI.list(filters)
-    products.value = data.products
-    pagination.value = data.pagination
+    const response = await productAPI.list(filters)
+    // 修复：根据实际API响应结构调整数据访问路径
+    products.value = response?.products || []  // API可能直接返回数据或 { products: [...] }
+    pagination.value = response?.pagination || { total: 0 }
+  } catch (error) {
+    console.error('加载商品失败:', error)
+    products.value = []
+    pagination.value = { total: 0 }
+    ElMessage.error('加载商品失败: ' + (error.message || '未知错误'))
   } finally {
     loading.value = false
   }
@@ -303,11 +312,41 @@ const loadProducts = async () => {
 
 const loadCategories = async () => {
   try {
-    const { data } = await categoryAPI.list()
-    categories.value = data.categories
+    const response = await categoryAPI.list()
+    console.log('分类API响应:', response) // 添加调试信息
+    
+    // 修复：根据实际API响应结构调整数据访问路径
+    if (response && typeof response === 'object') {
+      if (Array.isArray(response)) {
+        // 如果API直接返回数组
+        categories.value = response
+      } else if (response.data && Array.isArray(response.data.categories)) {
+        // 如果API返回 { data: { categories: [...] } }
+        categories.value = response.data.categories
+      } else if (response.data && Array.isArray(response.data)) {
+        // 如果API返回 { data: [...] }
+        categories.value = response.data
+      } else if (response.categories && Array.isArray(response.categories)) {
+        // 如果API返回 { categories: [...] }
+        categories.value = response.categories
+      } else if (response.success && response.data && Array.isArray(response.data)) {
+        // 如果API返回 { success: true, data: [...] }
+        categories.value = response.data
+      } else {
+        // 其他情况，使用默认值
+        categories.value = []
+      }
+    } else {
+      // 响应不是对象，使用默认值
+      categories.value = []
+    }
+    
+    // 添加调试信息，查看categories.value的内容
+    console.log('categories.value:', categories.value)
   } catch (error) {
     console.error('加载分类失败:', error)
-    ElMessage.error('加载分类失败')
+    categories.value = []
+    ElMessage.error('加载分类失败: ' + (error.message || '未知错误'))
   }
 }
 
@@ -498,10 +537,14 @@ const removeImage = () => {
   }
 
   .preview-image {
-    max-width: 200px;
-    max-height: 200px;
-    border-radius: 6px;
-    border: 1px solid #dcdfe6;
+    max-width: 100px;
+    max-height: 100px;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    object-fit: contain;
+    border: 1px solid #e0e6ed;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 }
 </style>

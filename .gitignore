@@ -41,3 +41,19 @@ coverage/
 .cache/
 temp/
 tmp/
+
+# Database
+*.db
+*.db-journal
+data/
+backend/data/
+
+# Uploaded files
+backend/public/uploads/
+
+# Memory database
+*.wt
+
+# Process
+*.pid
+*.out

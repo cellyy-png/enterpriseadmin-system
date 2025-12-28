@@ -1,5 +1,8 @@
 import axios from './axios'
 
+// 添加默认导出
+export default axios
+
 export const userAPI = {
     list: (params) => axios.get('/users', { params }),
     detail: (id) => axios.get(`/users/${id}`),
