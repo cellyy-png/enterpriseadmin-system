@@ -166,10 +166,42 @@ const loadAllData = async () => {
       dashboardAPI.overview(),
       dashboardAPI.salesTrend('30days')
     ])
-    overview.value = overviewRes.data
-    salesTrend.value = salesRes.data.salesData
+        
+    // 安全访问数据，处理各种可能的响应结构
+    if (overviewRes && typeof overviewRes === 'object') {
+      // 如果是API响应对象，提取data部分
+      if (overviewRes.data !== undefined) {
+        overview.value = overviewRes.data;
+      } else {
+        // 如果直接返回数据对象
+        overview.value = overviewRes;
+      }
+    } else {
+      overview.value = {};
+    }
+        
+    if (salesRes && typeof salesRes === 'object') {
+      // 如果是API响应对象，提取salesData部分
+      if (salesRes.salesData !== undefined) {
+        salesTrend.value = salesRes.salesData;
+      } else if (salesRes.data !== undefined) {
+        // 如果数据在data属性中
+        salesTrend.value = salesRes.data;
+      } else {
+        // 如果直接返回数组
+        salesTrend.value = Array.isArray(salesRes) ? salesRes : [];
+      }
+    } else {
+      salesTrend.value = [];
+    }
+        
+    // 添加调试信息
+    console.log('overview:', overview.value);
+    console.log('salesTrend:', salesTrend.value);
   } catch (error) {
     console.error('加载数据失败:', error)
+    overview.value = {}
+    salesTrend.value = []
   }
 }
 

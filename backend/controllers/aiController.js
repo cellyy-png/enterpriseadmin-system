@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 // 默认回退到 SiliconFlow 地址，防止环境变量读取失败
 const AI_API_URL = process.env.AI_API_URL || 'https://api.siliconflow.cn/v1/chat/completions';
 const AI_API_KEY = process.env.AI_API_KEY;
-const AI_MODEL = process.env.AI_MODEL || 'moonshotai/Kimi-K2-Instruct-0905';
+const AI_MODEL = process.env.AI_MODEL || 'qwen/qwen-32b-chat';
 
 // ============================================
 // 核心：通用 AI 调用函数 (联网版)
@@ -17,7 +17,9 @@ async function callAI(prompt, options = {}) {
   const { systemPrompt, max_tokens = 2000, temperature = 0.7 } = options;
 
   if (!AI_API_KEY) {
-    throw new Error('未配置 AI_API_KEY，请检查 backend/.env 文件');
+    console.warn('⚠️ 警告: 未配置 AI_API_KEY，将使用模拟响应');
+    // 返回模拟响应以供测试
+    return `模拟AI响应: ${prompt.substring(0, 50)}... [此为模拟响应，需要配置AI_API_KEY才能使用真实AI服务]`;
   }
 
   try {
@@ -27,7 +29,7 @@ async function callAI(prompt, options = {}) {
     }
     messages.push({ role: 'user', content: prompt });
 
-    console.log(`📡 [Kimi] 正在请求模型: ${AI_MODEL}...`);
+    console.log(`📡 [AI] 正在请求模型: ${AI_MODEL}...`);
 
     const response = await axios.post(
       AI_API_URL,
@@ -61,8 +63,15 @@ async function callAI(prompt, options = {}) {
       const status = error.response.status;
       if (status === 401) clientMsg = 'API Key 无效，请检查 .env 配置';
       else if (status === 402) clientMsg = '账户余额不足';
+      else if (status === 404) clientMsg = 'API 端点不存在，请检查模型配置';
       else if (status === 429) clientMsg = '请求过于频繁，请稍后再试';
+      else if (status === 500) clientMsg = 'AI 服务内部错误，请稍后再试';
       else if (error.response.data?.error?.message) clientMsg = `AI 报错: ${error.response.data.error.message}`;
+      else clientMsg = `AI 服务错误 (${status}): 请检查API配置`;
+    } else if (error.request) {
+      clientMsg = '网络连接失败，请检查网络或API地址';
+    } else {
+      clientMsg = `请求配置错误: ${error.message}`;
     }
     throw new Error(clientMsg);
   }
@@ -102,6 +111,7 @@ exports.analyzeData = async (req, res) => {
       generatedAt: new Date()
     });
   } catch (error) {
+    console.error('AI 数据分析错误:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -116,9 +126,9 @@ exports.aiChat = async (req, res) => {
 
     const userContext = req.user ? `当前用户: ${req.user.username}` : '';
 
-    // Kimi 的 System Prompt 设定
+    // AI 的 System Prompt 设定
     const systemPrompt = `
-你是一个企业后台管理系统的智能助手 (基于 Kimi 模型)。
+你是一个企业后台管理系统的智能助手 (基于 AI 模型)。
 请用专业、简洁、有帮助的中文回答用户关于系统管理或数据运营的问题。
 ${userContext}
 `;
@@ -131,6 +141,7 @@ ${userContext}
       timestamp: new Date()
     });
   } catch (error) {
+    console.error('AI 对话错误:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -164,6 +175,7 @@ exports.getDataStatistics = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('获取数据统计错误:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -190,6 +202,7 @@ exports.recommendProducts = async (req, res) => {
       }))
     });
   } catch (error) {
+    console.error('商品推荐错误:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -198,7 +211,7 @@ exports.recommendProducts = async (req, res) => {
 // 图像识别 (暂不支持)
 // ============================================
 exports.imageRecognition = async (req, res) => {
-  res.json({ recognition: "当前 Kimi 模型暂不支持图像识别。", confidence: 0 });
+  res.json({ recognition: "当前 AI 模型暂不支持图像识别。", confidence: 0 });
 };
 
 // ============================================

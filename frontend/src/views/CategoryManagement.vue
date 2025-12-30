@@ -92,6 +92,9 @@ import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import { categoryAPI } from '@/utils/request'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const categories = ref([])
 const dialogVisible = ref(false)
@@ -113,19 +116,77 @@ const formRules = {
 }
 
 const rootCategories = computed(() =>
-    categories.value.filter(cat => !cat.parent)
+    categories.value?.filter(cat => !cat.parent) || []
 )
 
 onMounted(() => {
-  loadCategories()
+  // 检查用户是否已登录
+  if (!userStore.token) {
+    ElMessage.error('请先登录')
+    setTimeout(() => {
+      window.location.href = '/login'
+    }, 1000)
+  } else {
+    // 验证token是否有效并获取用户信息
+    userStore.getCurrentUser().then(() => {
+      // token有效，加载分类数据
+      loadCategories()
+    }).catch(error => {
+      console.error('验证用户信息失败:', error)
+      ElMessage.error('登录已过期，请重新登录')
+      userStore.logout()
+    })
+  }
 })
 
 const loadCategories = async () => {
+  // 检查用户是否已登录
+  if (!userStore.token) {
+    ElMessage.error('请先登录')
+    // 重定向到登录页面
+    window.location.href = '/login'
+    return
+  }
+  
   try {
-    const { data } = await categoryAPI.list()
-    categories.value = data.categories
+    const response = await categoryAPI.list()
+    console.log('分类API响应:', response) // 添加调试信息
+    
+    // 修复：根据实际API响应结构调整数据访问路径
+    if (response && typeof response === 'object') {
+      if (Array.isArray(response)) {
+        // 如果API直接返回数组
+        categories.value = response
+      } else if (response.data && Array.isArray(response.data.categories)) {
+        // 如果API返回 { data: { categories: [...] } }
+        categories.value = response.data.categories
+      } else if (response.data && Array.isArray(response.data)) {
+        // 如果API返回 { data: [...] }
+        categories.value = response.data
+      } else if (response.categories && Array.isArray(response.categories)) {
+        // 如果API返回 { categories: [...] }
+        categories.value = response.categories
+      } else {
+        // 其他情况，使用默认值
+        categories.value = []
+      }
+    } else {
+      // 响应不是对象，使用默认值
+      categories.value = []
+    }
+    
+    // 添加调试信息，查看categories.value的内容
+    console.log('categories.value:', categories.value)
   } catch (error) {
-    ElMessage.error('加载分类失败')
+    console.error('加载分类失败:', error)
+    // 检查是否是401错误
+    if (error.response?.status === 401) {
+      ElMessage.error('登录已过期，请重新登录')
+      userStore.logout() // 使用store的logout方法清理状态
+    } else {
+      categories.value = []
+      ElMessage.error('加载分类失败')
+    }
   }
 }
 
@@ -156,7 +217,13 @@ const handleDelete = (row) => {
       ElMessage.success('删除成功')
       loadCategories()
     } catch (error) {
-      ElMessage.error(error.response?.data?.error || '删除失败')
+      // 检查是否是401错误
+      if (error.response?.status === 401) {
+        ElMessage.error('登录已过期，请重新登录')
+        userStore.logout() // 使用store的logout方法清理状态
+      } else {
+        ElMessage.error(error.response?.data?.error || '删除失败')
+      }
     }
   })
 }
@@ -176,7 +243,13 @@ const handleSubmit = async () => {
       dialogVisible.value = false
       loadCategories()
     } catch (error) {
-      ElMessage.error('操作失败')
+      // 检查是否是401错误
+      if (error.response?.status === 401) {
+        ElMessage.error('登录已过期，请重新登录')
+        userStore.logout() // 使用store的logout方法清理状态
+      } else {
+        ElMessage.error('操作失败: ' + (error.response?.data?.error || error.message || '未知错误'))
+      }
     }
   })
 }

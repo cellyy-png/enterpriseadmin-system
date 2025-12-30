@@ -13,7 +13,7 @@ exports.getAllCategories = async (req, res) => {
             .populate('parent', 'name slug')
             .sort({ sortOrder: 1, name: 1 });
 
-        res.json({ categories });
+        res.json({ success: true, data: categories });
     } catch (error) {
         res.status(500).json({ error: '获取分类列表失败' });
     }

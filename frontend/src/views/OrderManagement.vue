@@ -287,6 +287,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import { orderAPI, userAPI, productAPI } from '@/utils/request'
 import OrderDetail from '@/components/OrderDetail.vue'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 const loading = ref(false)
 const usersLoading = ref(false)
@@ -369,10 +372,34 @@ const dialogTitle = computed(() => {
 })
 
 onMounted(() => {
-  loadOrders()
+  // 检查用户是否已登录
+  if (!userStore.token) {
+    ElMessage.error('请先登录')
+    setTimeout(() => {
+      window.location.href = '/login'
+    }, 1000)
+  } else {
+    // 验证token是否有效并获取用户信息
+    userStore.getCurrentUser().then(() => {
+      // token有效，加载订单数据
+      loadOrders()
+    }).catch(error => {
+      console.error('验证用户信息失败:', error)
+      ElMessage.error('登录已过期，请重新登录')
+      userStore.logout()
+    })
+  }
 })
 
 const loadOrders = async () => {
+  // 检查用户是否已登录
+  if (!userStore.token) {
+    ElMessage.error('请先登录')
+    // 重定向到登录页面
+    window.location.href = '/login'
+    return
+  }
+  
   loading.value = true
   try {
     const params = { ...filters }
@@ -380,9 +407,43 @@ const loadOrders = async () => {
       params.startDate = dateRange.value[0]
       params.endDate = dateRange.value[1]
     }
-    const { data } = await orderAPI.list(params)
-    orders.value = data.orders
-    pagination.value = data.pagination
+    const response = await orderAPI.list(params)
+    console.log('订单API响应:', response) // 添加调试信息
+    // 修复：根据实际API响应结构调整数据访问路径
+    if (response && typeof response === 'object') {
+      if (Array.isArray(response)) {
+        // 如果API直接返回数组
+        orders.value = response
+        pagination.value = { total: response.length }
+      } else if (response.orders && Array.isArray(response.orders)) {
+        // 如果API返回 { orders: [...] }
+        orders.value = response.orders
+        pagination.value = response.pagination || { total: response.orders.length }
+      } else if (response.data && Array.isArray(response.data)) {
+        // 如果API返回 { data: [...] }
+        orders.value = response.data
+        pagination.value = response.pagination || { total: response.data.length }
+      } else {
+        // 其他情况，使用默认值
+        orders.value = []
+        pagination.value = { total: 0 }
+      }
+    } else {
+      // 响应不是对象，使用默认值
+      orders.value = []
+      pagination.value = { total: 0 }
+    }
+  } catch (error) {
+    console.error('加载订单失败:', error)
+    // 检查是否是401错误
+    if (error.response?.status === 401) {
+      ElMessage.error('登录已过期，请重新登录')
+      userStore.logout() // 使用store的logout方法清理状态
+    } else {
+      orders.value = []
+      pagination.value = { total: 0 }
+      ElMessage.error('加载订单失败: ' + (error.message || '未知错误'))
+    }
   } finally {
     loading.value = false
   }
@@ -391,8 +452,36 @@ const loadOrders = async () => {
 const loadUsers = async (query) => {
   usersLoading.value = true
   try {
-    const { data } = await userAPI.list({ search: query, limit: 20 })
-    userList.value = data.users
+    const response = await userAPI.list({ search: query, limit: 20 })
+    console.log('用户API响应:', response) // 添加调试信息
+    
+    // 修复：根据实际API响应结构调整数据访问路径
+    if (response && typeof response === 'object') {
+      if (Array.isArray(response)) {
+        // 如果API直接返回数组
+        userList.value = response
+      } else if (response.data && Array.isArray(response.data.users)) {
+        // 如果API返回 { data: { users: [...] } }
+        userList.value = response.data.users
+      } else if (response.data && Array.isArray(response.data)) {
+        // 如果API返回 { data: [...] }
+        userList.value = response.data
+      } else if (response.users && Array.isArray(response.users)) {
+        // 如果API返回 { users: [...] }
+        userList.value = response.users
+      } else if (response.success && response.data && Array.isArray(response.data)) {
+        // 如果API返回 { success: true, data: [...] }
+        userList.value = response.data
+      } else {
+        // 其他情况，使用默认值
+        userList.value = []
+      }
+    } else {
+      // 响应不是对象，使用默认值
+      userList.value = []
+    }
+    
+    console.log('处理后的用户数据:', userList.value)
   } finally {
     usersLoading.value = false
   }
@@ -402,9 +491,36 @@ const loadProducts = async (query, index) => {
   // 初始化该索引的产品加载状态
   productsLoading.value[index] = true
   try {
-    const { data } = await productAPI.list({ search: query, limit: 20 })
-    // 使用 Vue.set 或者直接赋值确保响应性
-    productLists.value[index] = data.products
+    const response = await productAPI.list({ search: query, limit: 20 })
+    console.log('商品API响应:', response) // 添加调试信息
+    
+    // 修复：根据实际API响应结构调整数据访问路径
+    if (response && typeof response === 'object') {
+      if (Array.isArray(response)) {
+        // 如果API直接返回数组
+        productLists.value[index] = response
+      } else if (response.data && Array.isArray(response.data.products)) {
+        // 如果API返回 { data: { products: [...] } }
+        productLists.value[index] = response.data.products
+      } else if (response.data && Array.isArray(response.data)) {
+        // 如果API返回 { data: [...] }
+        productLists.value[index] = response.data
+      } else if (response.products && Array.isArray(response.products)) {
+        // 如果API返回 { products: [...] }
+        productLists.value[index] = response.products
+      } else if (response.success && response.data && Array.isArray(response.data)) {
+        // 如果API返回 { success: true, data: [...] }
+        productLists.value[index] = response.data
+      } else {
+        // 其他情况，使用默认值
+        productLists.value[index] = []
+      }
+    } else {
+      // 响应不是对象，使用默认值
+      productLists.value[index] = []
+    }
+    
+    console.log('处理后的商品数据:', productLists.value[index])
   } finally {
     productsLoading.value[index] = false
   }
@@ -501,11 +617,21 @@ const handleSubmit = async () => {
       // 计算总金额
       formData.totalAmount = calculateTotalAmount()
 
+      // 准备提交数据，确保items数组中的每个对象包含product、quantity和price字段
+      const submitData = {
+        ...formData,
+        items: formData.items.map(item => ({
+          product: item.product,
+          quantity: item.quantity,
+          price: item.price
+        }))
+      }
+
       if (dialogType.value === 'edit') {
-        await orderAPI.update(formData._id, formData)
+        await orderAPI.update(formData._id, submitData)
         ElMessage.success('更新成功')
       } else if (dialogType.value === 'add') {
-        await orderAPI.create(formData)
+        await orderAPI.create(submitData)
         ElMessage.success('创建成功')
       }
       dialogVisible.value = false

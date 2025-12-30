@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
-const { authenticate, checkPermission } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
+const { checkPermission } = require('../middleware/permission');
 const { validate, productValidation } = require('../middleware/validation');
 const { cacheMiddleware, clearCache } = require('../middleware/cache');
 const multer = require('multer');

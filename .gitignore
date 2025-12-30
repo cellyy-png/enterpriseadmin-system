@@ -41,3 +41,10 @@ coverage/
 .cache/
 temp/
 tmp/
+
+# Database
+/data/db/
+
+# Uploads
+/public/uploads/
+/backend/public/uploads/

@@ -1,1 +1,0 @@
-{"id":"019b2631bdcfcf6da775e5837b6e26d1","object":"chat.completion","created":1765872352,"model":"moonshotai/Kimi-K2-Instruct-0905","choices":[{"index":0,"message":{"role":"assistant","content":"Hello! How can I assist you today?"},"finish_reason":"stop"}],"usage":{"prompt_tokens":27,"completion_tokens":9,"total_tokens":36},"system_fingerprint":""}

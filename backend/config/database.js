@@ -1,53 +1,66 @@
 const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
-const path = require('path');
-const fs = require('fs');
+
+let mongod; // 用于保存内存数据库实例
 
 const connectDB = async () => {
   try {
-    let uri = process.env.MONGODB_URI;
-
-    // 如果没有配置外部 MongoDB 连接串，则启动本地嵌入式数据库
-    if (!uri || uri.includes('localhost')) {
-      console.log('🔄 正在启动本地嵌入式数据库 (无需安装 MongoDB)...');
-
-      // 1. 确保存储数据的目录存在
-      // 数据将保存在 backend/../data/db 目录下
-      const dbPath = path.join(__dirname, '../../data/db');
-      if (!fs.existsSync(dbPath)) {
-        fs.mkdirSync(dbPath, { recursive: true });
-      }
-
-      // 2. 启动带持久化的内存数据库实例
-      const mongod = await MongoMemoryServer.create({
-        instance: {
-          dbPath: dbPath,
-          storageEngine: 'wiredTiger' // 使用文件存储引擎
-        }
-      });
-
-      uri = mongod.getUri();
-      console.log(`✅ 本地数据库已启动！数据存储于: ${dbPath}`);
-    }
-
+    // 使用本地 MongoDB 实例，如果未运行则使用内存数据库
+    let uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/enterpriseadmin';
+    
     const options = {
       serverSelectionTimeoutMS: 5000,
       autoIndex: true,
     };
 
     await mongoose.connect(uri, options);
-
     console.log('✅ MongoDB 连接成功');
-
-    // 监听连接事件
-    mongoose.connection.on('error', (err) => {
-      console.error('MongoDB 连接错误:', err);
-    });
-
+    console.log('📊 使用数据库:', uri);
   } catch (error) {
     console.error('❌ MongoDB 连接失败:', error.message);
-    // 不退出进程，允许重试或在开发模式下继续
+    console.log('🔄 尝试使用内存数据库...');
+    
+    // 如果连接失败，使用内存数据库
+    try {
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      mongod = await MongoMemoryServer.create();
+      const uri = mongod.getUri();
+      
+      const memOptions = {
+        serverSelectionTimeoutMS: 5000,
+        autoIndex: true,
+      };
+      
+      await mongoose.connect(uri, memOptions);
+      console.log('✅ 内存数据库连接成功');
+      console.log('📊 使用内存数据库:', uri);
+    } catch (memError) {
+      console.error('❌ 内存数据库连接失败:', memError.message);
+      console.error('详细错误:', memError);
+      throw memError; // 重新抛出错误，使服务器启动失败更明显
+    }
   }
+
+  // 监听连接事件
+  mongoose.connection.on('error', (err) => {
+    console.error('MongoDB 连接错误:', err);
+  });
+
+  // 在进程退出时清理内存数据库
+  process.on('SIGINT', async () => {
+    await mongoose.connection.close();
+    if (mongod) {
+      await mongod.stop();
+    }
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    await mongoose.connection.close();
+    if (mongod) {
+      await mongod.stop();
+    }
+    process.exit(0);
+  });
 };
 
 module.exports = connectDB;

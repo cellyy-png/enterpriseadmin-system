@@ -55,6 +55,18 @@ const routes = [
                 name: 'AIAssistant',
                 component: () => import('@/views/AIAssistant.vue'),
                 meta: { title: 'AI助手', icon: 'ChatDotRound' }
+            },
+            {
+                path: 'merchant-audit',
+                name: 'MerchantAudit',
+                component: () => import('@/views/MerchantAudit.vue'),
+                meta: { title: '商家入驻审核', permission: 'user' }
+            },
+            {
+                path: 'carousel-management',
+                name: 'CarouselManagement',
+                component: () => import('@/views/CarouselManagement.vue'),
+                meta: { title: '轮播图管理', permission: 'admin' }
             }
         ]
     }

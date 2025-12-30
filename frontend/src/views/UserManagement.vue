@@ -48,17 +48,21 @@
           stripe
           style="width: 100%"
       >
-        <el-table-column prop="username" label="用户名" min-width="120" />
+        <el-table-column label="用户名" min-width="120">
+          <template #default="{ row }">
+            <el-link @click="viewUserDetail(row)">{{ row.username }}</el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="email" label="邮箱" min-width="200" />
         <el-table-column label="角色" min-width="100">
           <template #default="{ row }">
-            <el-tag>{{ row.role?.displayName || '未分配角色' }}</el-tag>
+            <el-tag>{{ getDisplayRole(row) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="状态" min-width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
-              {{ row.status === 'active' ? '激活' : '停用' }}
+            <el-tag :type="getDisplayStyle(row)">
+              {{ getDisplayStatus(row) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -144,6 +148,47 @@
         <el-button type="primary" @click="handleSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 用户详情弹窗 -->
+    <el-dialog
+        v-model="detailDialogVisible"
+        title="用户详情"
+        width="600px"
+    >
+      <div class="user-detail">
+        <div class="detail-item">
+          <span class="label">用户名：</span>
+          <span class="value">{{ selectedUser?.username }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">邮箱：</span>
+          <span class="value">{{ selectedUser?.email }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">角色：</span>
+          <span class="value">{{ getDisplayRole(selectedUser) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">状态：</span>
+          <span class="value">{{ getDisplayStatus(selectedUser) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">创建时间：</span>
+          <span class="value">{{ formatDate(selectedUser?.createdAt) }}</span>
+        </div>
+        <div class="detail-item" v-if="selectedUser?.role?.name === 'merchant' && selectedUser.status === 'pending'">
+          <span class="label">申请时间：</span>
+          <span class="value">{{ formatDate(selectedUser?.applicationDate) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">联系方式：</span>
+          <span class="value">{{ selectedUser?.contactInfo || generatePhoneNumber(selectedUser?.username) }}</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -157,6 +202,8 @@ const loading = ref(false)
 const users = ref([])
 const pagination = ref({ total: 0, page: 1, pages: 1, limit: 10 })
 const dialogVisible = ref(false)
+const detailDialogVisible = ref(false)
+const selectedUser = ref(null)
 const formRef = ref(null)
 
 const filters = reactive({
@@ -198,11 +245,15 @@ onMounted(() => {
 const loadUsers = async () => {
   loading.value = true
   try {
-    const { data } = await userAPI.list(filters)
-    users.value = data.users
-    pagination.value = data.pagination
+    const response = await userAPI.list(filters)
+    // 修复：根据实际API响应结构调整数据访问路径
+    users.value = response?.users || []  // API可能直接返回数据或 { users: [...] }
+    pagination.value = response?.pagination || { total: 0, page: 1, pages: 1, limit: 10 }
   } catch (error) {
     console.error('加载用户失败:', error)
+    users.value = []
+    pagination.value = { total: 0, page: 1, pages: 1, limit: 10 }
+    ElMessage.error('加载用户失败: ' + (error.message || '未知错误'))
   } finally {
     loading.value = false
   }
@@ -210,11 +261,18 @@ const loadUsers = async () => {
 
 const loadRoles = async () => {
   try {
-    const { data } = await roleAPI.list()
-    roles.value = data.roles
+    const response = await roleAPI.list()
+    // 修复：根据实际API响应结构调整数据访问路径
+    const allRoles = response?.roles || []  // API可能直接返回数据或 { roles: [...] }
+    // 确保角色列表包含'商家'、'普通用户'、'超级管理员'三个选项
+    const filteredRoles = allRoles.filter(role => 
+      ['merchant', 'user', 'super_admin'].includes(role.name)
+    )
+    roles.value = filteredRoles
   } catch (error) {
     console.error('加载角色失败:', error)
-    ElMessage.error('加载角色失败')
+    roles.value = []
+    ElMessage.error('加载角色失败: ' + (error.message || '未知错误'))
   }
 }
 
@@ -231,10 +289,19 @@ const handleAdd = () => {
 }
 
 const handleEdit = (row) => {
+  // 获取普通用户的角色ID
+  const userRole = roles.value.find(role => role.name === 'user');
+    
+  // 如果用户的真实角色是普通用户，则强制设置为普通用户角色
+  let selectedRoleId = row.role?._id || row.role || '';
+  if (row.role?.name === 'user') {
+    selectedRoleId = userRole?._id || '';
+  }
+    
   Object.assign(formData, { 
     ...row, 
     password: '',
-    role: row.role?._id || row.role || ''
+    role: selectedRoleId
   })
   dialogVisible.value = true
 }
@@ -280,8 +347,55 @@ const handleReset = () => {
   loadUsers()
 }
 
+// 查看用户详情
+const viewUserDetail = (user) => {
+  console.log('查看用户详情:', user)
+  selectedUser.value = user
+  detailDialogVisible.value = true
+}
+
 const formatDate = (date) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss')
+}
+
+const getDisplayRole = (row) => {
+  // 根据用户的真实角色显示，而不是根据状态
+  // 如果用户状态为 pending（商家申请中），但其真实角色是 merchant，则显示为"待审核商家"
+  if (row.status === 'pending' && row.role?.name === 'merchant') {
+    return '待审核商家';
+  }
+  return row.role?.displayName || '未分配角色';
+}
+
+const getDisplayStatus = (row) => {
+  // 如果用户状态为 pending（商家申请中），显示为激活
+  if (row.status === 'pending') {
+    return '待审核';
+  }
+  return row.status === 'active' ? '激活' : '停用';
+}
+
+const getDisplayStyle = (row) => {
+  // 如果用户状态为 pending（商家申请中），显示为warning（黄色）
+  if (row.status === 'pending') {
+    return 'warning';
+  }
+  return row.status === 'active' ? 'success' : 'danger';
+}
+
+// 生成虚拟电话号码
+const generatePhoneNumber = (username) => {
+  if (!username) return '13800138000';
+  
+  // 提取用户名中的数字部分
+  const numberPart = username.match(/\d+/);
+  if (numberPart) {
+    const num = parseInt(numberPart[0]);
+    return `13800138${num.toString().padStart(4, '0')}`;
+  }
+  
+  // 如果没有数字，使用默认号码
+  return '13800138000';
 }
 </script>
 

@@ -69,19 +69,19 @@ async function initDatabase() {
         ]
       },
       {
-        name: 'manager',
-        displayName: '经理',
-        level: 50,
-        permissions: [
-          { resource: 'product', actions: ['read', 'update'] },
-          { resource: 'order', actions: ['read'] }
-        ]
-      },
-      {
         name: 'user',
         displayName: '普通用户',
         level: 10,
         permissions: [{ resource: 'product', actions: ['read'] }]
+      },
+      {
+        name: 'merchant',
+        displayName: '商家',
+        level: 20,
+        permissions: [
+          { resource: 'product', actions: ['create', 'read', 'update', 'delete'] },
+          { resource: 'order', actions: ['read', 'update'] }
+        ]
       }
     ]);
     console.log('✓ 创建角色成功');

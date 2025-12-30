@@ -4,6 +4,14 @@
       <h2>{{ collapsed ? '系统' : '企业管理系统' }}</h2>
     </div>
 
+    <el-menu-item index="/merchant-audit">
+      <el-icon><UserFilled /></el-icon> <span>商家入驻审核</span>
+    </el-menu-item>
+
+    <el-menu-item index="/carousel-management">
+      <el-icon><Picture /></el-icon>
+      <span>轮播图管理</span>
+    </el-menu-item>
     <el-menu
       :default-active="activeMenu"
       :collapse="collapsed"
