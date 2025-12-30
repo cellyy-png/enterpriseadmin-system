@@ -677,10 +677,21 @@ onMounted(() => {
         border: 1px solid #e0e6ed;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         // 确保样式应用到 el-image 组件
+          width: auto;
+          height: auto;
+>>>>>>> 4544d2e97974b762fba444312a1c924774747abf
+        }
         &::v-deep(.el-image__inner) {
           max-width: 100%;
           max-height: 100%;
           object-fit: contain;
+          width: auto;
+          height: auto;
+        }
+=======
+          width: auto;
+          height: auto;
+>>>>>>> 4544d2e97974b762fba444312a1c924774747abf
         }
       }
 

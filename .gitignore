@@ -42,9 +42,50 @@ coverage/
 temp/
 tmp/
 
+*.db
+*.db-journal
+data/
+backend/data/
+
+# Uploaded files
+backend/public/uploads/
+
+# Memory database
+*.wt
+
+# Process
+*.pid
+*.out
+>>>>>>> 4544d2e97974b762fba444312a1c924774747abf
 # Database
 /data/db/
+*.db
+*.db-journal
+backend/data/
 
-# Uploads
+# Uploaded files
 /public/uploads/
 /backend/public/uploads/
+
+# Memory database
+*.wt
+
+# Process
+*.pid
+*.out
+=======
+*.db
+*.db-journal
+data/
+backend/data/
+
+# Uploaded files
+backend/public/uploads/
+
+# Memory database
+*.wt
+
+# Process
+*.pid
+*.out
+>>>>>>> 4544d2e97974b762fba444312a1c924774747abf
